@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="plc.examples.AccountTests" tests="6" skipped="0" failures="0" errors="0" timestamp="2021-08-24T22:04:42" hostname="BLACKRGB" time="0.029">
+  <properties/>
+  <testcase name="testWithdraw(String, int, int, Account)[1]" classname="plc.examples.AccountTests" time="0.021"/>
+  <testcase name="testWithdraw(String, int, int, Account)[2]" classname="plc.examples.AccountTests" time="0.002"/>
+  <testcase name="testOverdrawn()" classname="plc.examples.AccountTests" time="0.001"/>
+  <testcase name="testDeposit(String, int, int, Account)[1]" classname="plc.examples.AccountTests" time="0.0"/>
+  <testcase name="testDeposit(String, int, int, Account)[2]" classname="plc.examples.AccountTests" time="0.001"/>
+  <testcase name="testPassed()" classname="plc.examples.AccountTests" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
