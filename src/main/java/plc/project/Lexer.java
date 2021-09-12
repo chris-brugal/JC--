@@ -28,7 +28,25 @@ public final class Lexer {
      * whitespace where appropriate.
      */
     public List<Token> lex() {
-        throw new UnsupportedOperationException(); //TODO
+        //GOAL: Calling LexToken() and adding to create list of tokens
+        //create the list<token>
+        //while there are still characters
+        //if chars not whitespace via peek,
+            //list tokens add lextoken() (ex: array.add(lexToken()); )
+            //move in the char stream?
+        //keep moving in the char stream?
+
+        List<Token> tokenList = new ArrayList<Token>();
+
+        while(peek(".")){
+            if(peek("[ \b\n\r\t]")){
+                chars.advance();
+                chars.skip();
+            }else{
+                tokenList.add(lexToken());
+            }
+        }
+        return tokenList;
     }
 
     /**
@@ -40,23 +58,90 @@ public final class Lexer {
      * by {@link #lex()}
      */
     public Token lexToken() {
-        throw new UnsupportedOperationException(); //TODO
+        //TODO
+        //GOAL: Deal with the rest of the lex's
+        //find a way to grab the first character and then find out which of the types it is
+        //if peek(regex for first character in number)
+            //lexNumber() (which will make the token)
+        //if peek(regex for character)
+            //lexCharacter()
+        //last is lexOperator since its everything else
+
+        if(peek("[A-Za-z@]")){
+            return lexIdentifier();
+        } else if (peek("0-9")){
+            return lexNumber();
+        } else if (peek("'")){
+            return lexCharacter();
+        } else if (peek("\"")){
+            return lexString();
+        } else{
+            return lexOperator();
+        }
     }
 
     public Token lexIdentifier() {
-        throw new UnsupportedOperationException(); //TODO
+        //While there is characters that match the regex, we match them
+        //return w chars.emit as said in lecture
+        //TODO deal with the @ symbol
+        String regex = "[A-Za-z0-9_-]";
+        while (peek(regex)){
+            match(regex);
+        }
+        return chars.emit(Token.Type.IDENTIFIER);
     }
 
     public Token lexNumber() {
-        throw new UnsupportedOperationException(); //TODO
+        //TODO match the rules of numbers
+        if(peek("-")){
+            match("-");
+            boolean negative = false;
+            while (peek("[1-9]")){
+                match("[1-9]");
+                negative = true;
+            }
+            if(peek("[.]")){
+                match("[.]");
+                while(peek("[0-9]")){
+                    match("[0-9]");
+                    negative = true;
+                }
+                if(negative){
+                    return chars.emit(Token.Type.DECIMAL);
+                }else{
+                    return chars.emit(Token.Type.OPERATOR);
+                }
+            }else{
+                if(negative){
+                    return chars.emit(Token.Type.INTEGER);
+                }else{
+                    return chars.emit(Token.Type.OPERATOR);
+                }
+            }
+        }else{
+
+
+        }
+
+        return chars.emit(Token.Type.INTEGER);
     }
 
     public Token lexCharacter() {
-        throw new UnsupportedOperationException(); //TODO
+        //TODO match the rules of characters
+        String regex = "";
+        while (peek(regex)){
+            match(regex);
+        }
+        return chars.emit(Token.Type.CHARACTER);
     }
 
     public Token lexString() {
-        throw new UnsupportedOperationException(); //TODO
+        //TODO match the rules of strings
+        String regex = "";
+        while (peek(regex)){
+            match(regex);
+        }
+        return chars.emit(Token.Type.STRING);
     }
 
     public void lexEscape() {
@@ -64,7 +149,12 @@ public final class Lexer {
     }
 
     public Token lexOperator() {
-        throw new UnsupportedOperationException(); //TODO
+        //TODO match the rules of operators
+        String regex = "";
+        while (peek(regex)){
+            match(regex);
+        }
+        return chars.emit(Token.Type.OPERATOR);
     }
 
     /**
@@ -73,7 +163,13 @@ public final class Lexer {
      * return true if the next characters are {@code 'a', 'b', 'c'}.
      */
     public boolean peek(String... patterns) {
-        throw new UnsupportedOperationException(); //TODO (in Lecture)
+        for(int i=0; i < patterns.length; i++){
+            if(!(chars.has(i)) || !(String.valueOf(chars.get(i)).matches(patterns[i]))){
+                //if there is no character or if there is no match to the regex statement, return false
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -82,7 +178,14 @@ public final class Lexer {
      * true. Hint - it's easiest to have this method simply call peek.
      */
     public boolean match(String... patterns) {
-        throw new UnsupportedOperationException(); //TODO (in Lecture)
+        boolean peek = peek(patterns);
+        if(peek == true){
+            for(int i=0; i < patterns.length; i++){
+                //if the character is matched to the regex, we advance on, moving the index pointer
+                chars.advance();
+            }
+        }
+        return peek;
     }
 
     /**
