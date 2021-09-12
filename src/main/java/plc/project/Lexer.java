@@ -69,7 +69,7 @@ public final class Lexer {
 
         if(peek("[A-Za-z@]")){
             return lexIdentifier();
-        } else if (peek("0-9")){
+        } else if (peek("[0-9-]")){
             return lexNumber();
         } else if (peek("'")){
             return lexCharacter();
@@ -92,37 +92,46 @@ public final class Lexer {
     }
 
     public Token lexNumber() {
-        //TODO match the rules of numbers
+        //TODO make sure this works correctly
         if(peek("-")){
             match("-");
-            boolean negative = false;
-            while (peek("[1-9]")){
+            if(peek("[1-9]")){
                 match("[1-9]");
-                negative = true;
-            }
-            if(peek("[.]")){
-                match("[.]");
-                while(peek("[0-9]")){
+                while (peek("[0-9]")){
                     match("[0-9]");
-                    negative = true;
                 }
-                if(negative){
+                if(peek("[.]", "[0-9]")){
+                    match("[.]");
+                    while(peek("[0-9]")){
+                        match("[0-9]");
+                    }
                     return chars.emit(Token.Type.DECIMAL);
                 }else{
-                    return chars.emit(Token.Type.OPERATOR);
-                }
-            }else{
-                if(negative){
                     return chars.emit(Token.Type.INTEGER);
-                }else{
-                    return chars.emit(Token.Type.OPERATOR);
                 }
             }
+            return chars.emit(Token.Type.OPERATOR);
         }else{
-
-
+            if(peek("[0]")){
+                match("[0]");
+                return chars.emit(Token.Type.INTEGER);
+            }
+            if(peek("[1-9]")){
+                match("[1-9]");
+                while (peek("[0-9]")){
+                    match("[0-9]");
+                }
+                if(peek("[.]", "0-9")){
+                    match("[.]");
+                    while(peek("[0-9]")){
+                        match("[0-9]");
+                    }
+                    return chars.emit(Token.Type.DECIMAL);
+                } else{
+                    return chars.emit(Token.Type.INTEGER);
+                }
+            }
         }
-
         return chars.emit(Token.Type.INTEGER);
     }
 
