@@ -84,9 +84,15 @@ public final class Lexer {
     public Token lexIdentifier() {
         //While there is characters that match the regex, we match them
         //return w chars.emit as said in lecture
-        //TODO deal with the @ symbol
-        String regex = "[A-Za-z0-9_-]";
+
+        if(peek("@")){
+            match("@");
+        }
+        String regex = "([A-Za-z0-9_-])";
         while (peek(regex)){
+            if(peek("@")){
+                return chars.emit(Token.Type.IDENTIFIER);
+            }
             match(regex);
         }
         return chars.emit(Token.Type.IDENTIFIER);
@@ -163,7 +169,7 @@ ParseException error = new ParseException("not allowed", 0);
     }
 
     public Token lexString() {
-        //TODO match the rules of strings
+
 int indexIncrement = 0;
             match("[\\\"]");
                 while(peek(".")) {
@@ -173,7 +179,7 @@ int indexIncrement = 0;
                         if (peek("[bnrt\\'\\\"\\\\]")) {
                             match("[bnrt\\'\\\"\\\\]");
                         }else{
-                            indexIncrement=1;
+                            indexIncrement=2;
                             break;}
 
 
@@ -185,7 +191,7 @@ int indexIncrement = 0;
                             match(".");
                             return chars.emit(Token.Type.STRING);
                         }else{
-                           indexIncrement=0;
+                           indexIncrement=5;
                            break;}
 
                     }
@@ -201,7 +207,7 @@ int indexIncrement = 0;
     }
 
     public Token lexOperator() {
-        //TODO match the rules of operators
+
         if(peek("[!=]","=") ||peek("&","&") ||peek("[|]","[|]")){
             match(".",".");
         }else{
