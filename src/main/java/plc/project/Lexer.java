@@ -19,6 +19,7 @@ public final class Lexer {
 
     private final CharStream chars;
 
+
     public Lexer(String input) {
         chars = new CharStream(input);
     }
@@ -71,9 +72,9 @@ public final class Lexer {
             return lexIdentifier();
         } else if (peek("[0-9-]")){
             return lexNumber();
-        } else if (peek("'")){
+        } else if (peek("[\\']")){
             return lexCharacter();
-        } else if (peek("\"")){
+        } else if (peek("\\\"")){
             return lexString();
         } else{
             return lexOperator();
@@ -136,21 +137,63 @@ public final class Lexer {
     }
 
     public Token lexCharacter() {
-        //TODO match the rules of characters
-        String regex = "";
-        while (peek(regex)){
-            match(regex);
+        //Perfection
+ParseException error = new ParseException("not allowed", 0);
+
+            match("[\\']");
+
+                if (peek("[\\\\]", "[bnrt\\'\\\"\\\\]","[\\']")) {
+                    match("[\\\\]");
+                    match("[bnrt\\'\\\"\\\\]");
+                    match("[\\']");
+                    return  chars.emit(Token.Type.CHARACTER);
+                }
+                else if(peek("[^\\'\\\"\\\\]", "[\\']")){
+                    match("[^\\'\\\"\\\\]","[\\']" );
+                    return chars.emit(Token.Type.CHARACTER);
         }
-        return chars.emit(Token.Type.CHARACTER);
+                else if(peek("[\\']")){
+                    throw new ParseException("NOT ALLOWED",chars.index+=1);
+                }else{
+
+                    throw new ParseException("NOT ALLOWED",chars.index+=2);
+                }
+
+
     }
 
     public Token lexString() {
         //TODO match the rules of strings
-        String regex = "";
-        while (peek(regex)){
-            match(regex);
-        }
-        return chars.emit(Token.Type.STRING);
+int indexIncrement = 0;
+            match("[\\\"]");
+                while(peek(".")) {
+
+                    if (peek("[\\\\]")) {
+                        match("[\\\\]");
+                        if (peek("[bnrt\\'\\\"\\\\]")) {
+                            match("[bnrt\\'\\\"\\\\]");
+                        }else{
+                            indexIncrement=1;
+                            break;}
+
+
+                    } else{
+                        if(peek("[^\\\"\\\\]")) {
+                            match(".");
+                        }
+                       else if(peek("[\\\"]")){
+                            match(".");
+                            return chars.emit(Token.Type.STRING);
+                        }else{
+                           indexIncrement=0;
+                           break;}
+
+                    }
+                }
+
+
+
+        throw new ParseException("NOT ALLOWED",chars.index+=indexIncrement);
     }
 
     public void lexEscape() {
@@ -159,9 +202,10 @@ public final class Lexer {
 
     public Token lexOperator() {
         //TODO match the rules of operators
-        String regex = "";
-        while (peek(regex)){
-            match(regex);
+        if(peek("[!=]","=") ||peek("&","&") ||peek("[|]","[|]")){
+            match(".",".");
+        }else{
+            match(".");
         }
         return chars.emit(Token.Type.OPERATOR);
     }
