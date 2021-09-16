@@ -5,16 +5,17 @@ import java.util.List;
 
 /**
  * The lexer works through three main functions:
- *
- *  - {@link #lex()}, which repeatedly calls lexToken() and skips whitespace
- *  - {@link #lexToken()}, which lexes the next token
- *  - {@link CharStream}, which manages the state of the lexer and literals
- *
+ * <p>
+ * - {@link #lex()}, which repeatedly calls lexToken() and skips whitespace
+ * - {@link #lexToken()}, which lexes the next token
+ * - {@link CharStream}, which manages the state of the lexer and literals
+ * <p>
  * If the lexer fails to parse something (such as an unterminated string) you
  * should throw a {@link ParseException} with an index at the character which is
  * invalid.
- *
- * The {@link #peek(String...)} and {@link #match(String...)} functions are * helpers you need to use, they will make the implementation a lot easier. */
+ * <p>
+ * The {@link #peek(String...)} and {@link #match(String...)} functions are * helpers you need to use, they will make the implementation a lot easier.
+ */
 public final class Lexer {
 
     private final CharStream chars;
@@ -33,17 +34,17 @@ public final class Lexer {
         //create the list<token>
         //while there are still characters
         //if chars not whitespace via peek,
-            //list tokens add lextoken() (ex: array.add(lexToken()); )
-            //move in the char stream?
+        //list tokens add lextoken() (ex: array.add(lexToken()); )
+        //move in the char stream?
         //keep moving in the char stream?
 
         List<Token> tokenList = new ArrayList<Token>();
 
-        while(peek(".")){
-            if(peek("[ \b\n\r\t]")){
+        while (peek(".")) {
+            if (peek("[ \b\n\r\t]")) {
                 chars.advance();
                 chars.skip();
-            }else{
+            } else {
                 tokenList.add(lexToken());
             }
         }
@@ -54,7 +55,7 @@ public final class Lexer {
      * This method determines the type of the next token, delegating to the
      * appropriate lex method. As such, it is best for this method to not change
      * the state of the char stream (thus, use peek not match).
-     *
+     * <p>
      * The next character should start a valid token since whitespace is handled
      * by {@link #lex()}
      */
@@ -63,20 +64,20 @@ public final class Lexer {
         //GOAL: Deal with the rest of the lex's
         //find a way to grab the first character and then find out which of the types it is
         //if peek(regex for first character in number)
-            //lexNumber() (which will make the token)
+        //lexNumber() (which will make the token)
         //if peek(regex for character)
-            //lexCharacter()
+        //lexCharacter()
         //last is lexOperator since its everything else
 
-        if(peek("[A-Za-z@]")){
+        if (peek("[A-Za-z@]")) {
             return lexIdentifier();
-        } else if (peek("[0-9-]")){
+        } else if (peek("[0-9-]")) {
             return lexNumber();
-        } else if (peek("[\\']")){
+        } else if (peek("[\\']")) {
             return lexCharacter();
-        } else if (peek("\\\"")){
+        } else if (peek("\\\"")) {
             return lexString();
-        } else{
+        } else {
             return lexOperator();
         }
     }
@@ -85,12 +86,12 @@ public final class Lexer {
         //While there is characters that match the regex, we match them
         //return w chars.emit as said in lecture
 
-        if(peek("@")){
+        if (peek("@")) {
             match("@");
         }
         String regex = "([A-Za-z0-9_-])";
-        while (peek(regex)){
-            if(peek("@")){
+        while (peek(regex)) {
+            if (peek("@")) {
                 return chars.emit(Token.Type.IDENTIFIER);
             }
             match(regex);
@@ -100,41 +101,41 @@ public final class Lexer {
 
     public Token lexNumber() {
         //TODO make sure this works correctly
-        if(peek("-")){
+        if (peek("-")) {
             match("-");
-            if(peek("[1-9]")){
+            if (peek("[1-9]")) {
                 match("[1-9]");
-                while (peek("[0-9]")){
+                while (peek("[0-9]")) {
                     match("[0-9]");
                 }
-                if(peek("[.]", "[0-9]")){
+                if (peek("[.]", "[0-9]")) {
                     match("[.]");
-                    while(peek("[0-9]")){
+                    while (peek("[0-9]")) {
                         match("[0-9]");
                     }
                     return chars.emit(Token.Type.DECIMAL);
-                }else{
+                } else {
                     return chars.emit(Token.Type.INTEGER);
                 }
             }
             return chars.emit(Token.Type.OPERATOR);
-        }else{
-            if(peek("[0]")){
+        } else {
+            if (peek("[0]")) {
                 match("[0]");
                 return chars.emit(Token.Type.INTEGER);
             }
-            if(peek("[1-9]")){
+            if (peek("[1-9]")) {
                 match("[1-9]");
-                while (peek("[0-9]")){
+                while (peek("[0-9]")) {
                     match("[0-9]");
                 }
-                if(peek("[.]", "0-9")){
+                if (peek("[.]", "[0-9]")) {
                     match("[.]");
-                    while(peek("[0-9]")){
+                    while (peek("[0-9]")) {
                         match("[0-9]");
                     }
                     return chars.emit(Token.Type.DECIMAL);
-                } else{
+                } else {
                     return chars.emit(Token.Type.INTEGER);
                 }
             }
@@ -144,62 +145,65 @@ public final class Lexer {
 
     public Token lexCharacter() {
         //Perfection
-ParseException error = new ParseException("not allowed", 0);
 
+        if (!peek("[\\']", ".")) {
             match("[\\']");
-
-                if (peek("[\\\\]", "[bnrt\\'\\\"\\\\]","[\\']")) {
-                    match("[\\\\]");
-                    match("[bnrt\\'\\\"\\\\]");
-                    match("[\\']");
-                    return  chars.emit(Token.Type.CHARACTER);
-                }
-                else if(peek("[^\\'\\\"\\\\]", "[\\']")){
-                    match("[^\\'\\\"\\\\]","[\\']" );
-                    return chars.emit(Token.Type.CHARACTER);
+            return chars.emit(Token.Type.OPERATOR);
+        } else {
+            match("[\\']");
         }
-                else if(peek("[\\']")){
-                    throw new ParseException("NOT ALLOWED",chars.index+=1);
-                }else{
+        if (peek("[\\\\]", "[bnrt\\'\\\"\\\\]", "[\\']")) {
+            match("[\\\\]");
+            match("[bnrt\\'\\\"\\\\]");
+            match("[\\']");
+            return chars.emit(Token.Type.CHARACTER);
+        } else if (peek("[^\\'\\\"\\\\]", "[\\']")) {
+            match("[^\\'\\\"\\\\]", "[\\']");
+            return chars.emit(Token.Type.CHARACTER);
+        } else if (peek("[\\']")) {
+            throw new ParseException("NOT ALLOWED", chars.index);
+        } else {
 
-                    throw new ParseException("NOT ALLOWED",chars.index+=2);
-                }
+            throw new ParseException("NOT ALLOWED", chars.index+=1);
+        }
 
 
     }
 
     public Token lexString() {
 
-int indexIncrement = 0;
+        int indexIncrement = 0;
+        if (!peek("[\\\"]", ".")) {
             match("[\\\"]");
-                while(peek(".")) {
+            return chars.emit(Token.Type.OPERATOR);
+        } else {
+            match("[\\\"]");
+        }
 
-                    if (peek("[\\\\]")) {
-                        match("[\\\\]");
-                        if (peek("[bnrt\\'\\\"\\\\]")) {
-                            match("[bnrt\\'\\\"\\\\]");
-                        }else{
-                            indexIncrement=2;
-                            break;}
+        while (peek(".")) {
 
-
-                    } else{
-                        if(peek("[^\\\"\\\\]")) {
-                            match(".");
-                        }
-                       else if(peek("[\\\"]")){
-                            match(".");
-                            return chars.emit(Token.Type.STRING);
-                        }else{
-                           indexIncrement=5;
-                           break;}
-
-                    }
+            if (peek("[\\\\]")) {
+                match("[\\\\]");
+                if (peek("[bnrt\\'\\\"\\\\]")) {
+                    match("[bnrt\\'\\\"\\\\]");
+                } else {
+                    indexIncrement = 0;
+                    break;
+                }
+            } else {
+                if (peek("[^\\\"\\\\]")) {
+                    match(".");
+                } else if (peek("[\\\"]")) {
+                    match(".");
+                    return chars.emit(Token.Type.STRING);
+                } else {
+                    indexIncrement = 0;
+                    break;
                 }
 
-
-
-        throw new ParseException("NOT ALLOWED",chars.index+=indexIncrement);
+            }
+        }
+        throw new ParseException("NOT ALLOWED", chars.index += indexIncrement);
     }
 
     public void lexEscape() {
@@ -208,9 +212,9 @@ int indexIncrement = 0;
 
     public Token lexOperator() {
 
-        if(peek("[!=]","=") ||peek("&","&") ||peek("[|]","[|]")){
-            match(".",".");
-        }else{
+        if (peek("[!=]", "=") || peek("&", "&") || peek("[|]", "[|]")) {
+            match(".", ".");
+        } else {
             match(".");
         }
         return chars.emit(Token.Type.OPERATOR);
@@ -222,8 +226,8 @@ int indexIncrement = 0;
      * return true if the next characters are {@code 'a', 'b', 'c'}.
      */
     public boolean peek(String... patterns) {
-        for(int i=0; i < patterns.length; i++){
-            if(!(chars.has(i)) || !(String.valueOf(chars.get(i)).matches(patterns[i]))){
+        for (int i = 0; i < patterns.length; i++) {
+            if (!(chars.has(i)) || !(String.valueOf(chars.get(i)).matches(patterns[i]))) {
                 //if there is no character or if there is no match to the regex statement, return false
                 return false;
             }
@@ -238,8 +242,8 @@ int indexIncrement = 0;
      */
     public boolean match(String... patterns) {
         boolean peek = peek(patterns);
-        if(peek == true){
-            for(int i=0; i < patterns.length; i++){
+        if (peek == true) {
+            for (int i = 0; i < patterns.length; i++) {
                 //if the character is matched to the regex, we advance on, moving the index pointer
                 chars.advance();
             }
@@ -250,7 +254,7 @@ int indexIncrement = 0;
     /**
      * A helper class maintaining the input string, current index of the char
      * stream, and the current length of the token being matched.
-     *
+     * <p>
      * You should rely on peek/match for state management in nearly all cases.
      * The only field you need to access is {@link #index} for any {@link
      * ParseException} which is thrown.
