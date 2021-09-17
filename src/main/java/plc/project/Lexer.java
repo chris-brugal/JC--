@@ -157,8 +157,8 @@ public final class Lexer {
             match("[bnrt\\'\\\"\\\\]");
             match("[\\']");
             return chars.emit(Token.Type.CHARACTER);
-        } else if (peek("[^\\'\\\"\\\\]", "[\\']")) {
-            match("[^\\'\\\"\\\\]", "[\\']");
+        } else if (peek("[^\\'\\\\]", "[\\']")) {
+            match("[^\\'\\\\]", "[\\']");
             return chars.emit(Token.Type.CHARACTER);
         } else if (peek("[\\']")) {
             throw new ParseException("NOT ALLOWED", chars.index);
