@@ -32,6 +32,15 @@ public final class Parser {
         match(tokenType);
         return s;
     }
+    int errorIndex( boolean missingExpected) {
+        int index = 0;
+        if(missingExpected) {
+            index = tokens.get(tokens.index).getIndex() + tokens.get(tokens.index).getLiteral().length();
+         }else{
+            index = tokens.get(tokens.index+1).getIndex();
+         }
+        return index;
+    }
 
     /**
      * Parses the {@code source} rule.
@@ -103,7 +112,7 @@ public final class Parser {
                 return new Ast.Statement.Assignment(first, second);
             } else {
                 //no closing semicolon
-                throw new ParseException("PARSE ERRORRRR!", -1);
+                throw new ParseException("PARSE ERRORRRR!", errorIndex(true));
             }
         } else {
             if (peek(";")) {
@@ -111,7 +120,7 @@ public final class Parser {
                 return new Ast.Statement.Expression(first);
             } else {
                 //no closing semicolon
-                throw new ParseException("PARSE ERRORRRR!", -1);
+                throw new ParseException("PARSE ERRORRRR!", errorIndex(true));
             }
         }
     }
@@ -304,7 +313,7 @@ public final class Parser {
                 return new Ast.Expression.Group(first);
             }else{
                 //error that there is something else other than closing quote on group
-                throw new ParseException("PARSE ERRORRRR!", -1);
+                throw new ParseException("PARSE ERRORRRR!", errorIndex(false) );
             }
         } else if (peek(Token.Type.IDENTIFIER)){
             String first = tokenToString(Token.Type.IDENTIFIER);
@@ -318,7 +327,7 @@ public final class Parser {
 
                         if(peek(")")){
                             //error that there is a closing bracket after a comma
-                            throw new ParseException("PARSE ERRORRRR!", -1);
+                            throw new ParseException("PARSE ERRORRRR!", errorIndex(false));
                         }
                     }
                 }
@@ -327,7 +336,7 @@ public final class Parser {
                     return new Ast.Expression.Function(first, arguments);
                 }
                 //error that there is no closing bracket on function
-                throw new ParseException("PARSE ERRORRRR!", -1);
+                throw new ParseException("PARSE ERRORRRR!", errorIndex(true));
             } else if (peek("[")){
                 match("[");
                 Ast.Expression second = parseExpression();
@@ -336,7 +345,11 @@ public final class Parser {
                     return new Ast.Expression.Access(Optional.of(second), first);
                 }else{
                     //error that it doesn't end in a ']'
-                    throw new ParseException("PARSE ERRORRRR!", -1);
+                    if(peek(".")) {
+                        throw new ParseException("PARSE ERRORRRR!", errorIndex(false));
+                    }else{
+                        throw new ParseException("PARSE ERRORRRR!", errorIndex(true));
+                    }
                 }
             }else{
                 //just return an identifier
@@ -344,7 +357,7 @@ public final class Parser {
             }
         }else{
             //error that there is nothing to peek/match as a primary expression
-            throw new ParseException("PARSE ERRORRRR!", -1);
+            throw new ParseException("PARSE ERRORRRR!", errorIndex(true));
         }
     }
 
