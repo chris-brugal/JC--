@@ -32,15 +32,18 @@ public final class Parser {
         match(tokenType);
         return s;
     }
-    int errorIndex( boolean missingExpected) {
-        int index = 0;
-        if(missingExpected) {
-            index = tokens.get(tokens.index).getIndex() + tokens.get(tokens.index).getLiteral().length();
-         }else{
-            index = tokens.get(tokens.index+1).getIndex();
-         }
-        return index;
+
+    int errorIndex(boolean there) {
+        if (!there) {
+            //grab before
+            return tokens.get(-1).getLiteral().length() + tokens.get(-1).getIndex();
+        } else if (there) {
+            //grab there
+            return tokens.get(0).getIndex();
+        }
+        return -1;
     }
+
 
     /**
      * Parses the {@code source} rule.
@@ -112,7 +115,7 @@ public final class Parser {
                 return new Ast.Statement.Assignment(first, second);
             } else {
                 //no closing semicolon
-                throw new ParseException("PARSE ERRORRRR!", errorIndex(true));
+                throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
             }
         } else {
             if (peek(";")) {
@@ -120,7 +123,7 @@ public final class Parser {
                 return new Ast.Statement.Expression(first);
             } else {
                 //no closing semicolon
-                throw new ParseException("PARSE ERRORRRR!", errorIndex(true));
+                throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
             }
         }
     }
@@ -284,7 +287,7 @@ public final class Parser {
             return new Ast.Expression.Literal(new BigDecimal(tokenToString(Token.Type.DECIMAL)));
         } else if (peek(Token.Type.CHARACTER)) {
             String c = tokenToString(Token.Type.CHARACTER);
-            c = c.substring(1, c.length()-1);
+            c = c.substring(1, c.length() - 1);
             c = c.replace("\\b", "\b");
             c = c.replace("\\n", "\n");
             c = c.replace("\\r", "\r");
@@ -296,7 +299,7 @@ public final class Parser {
             return new Ast.Expression.Literal(first);
         } else if (peek(Token.Type.STRING)) {
             String s = tokenToString(Token.Type.STRING);
-            s = s.substring(1, s.length()-1);
+            s = s.substring(1, s.length() - 1);
             s = s.replace("\\b", "\b");
             s = s.replace("\\n", "\n");
             s = s.replace("\\r", "\r");
@@ -305,59 +308,59 @@ public final class Parser {
             s = s.replace("\\\\", "\\");
             s = s.replace("\\\'", "\'");
             return new Ast.Expression.Literal(s);
-        } else if (peek("(")){
+        } else if (peek("(")) {
             match("(");
             Ast.Expression first = parseExpression();
-            if(peek(")")){
+            if (peek(")")) {
                 match(")");
                 return new Ast.Expression.Group(first);
-            }else{
+            } else {
                 //error that there is something else other than closing quote on group
-                throw new ParseException("PARSE ERRORRRR!", errorIndex(false) );
+                throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
             }
-        } else if (peek(Token.Type.IDENTIFIER)){
+        } else if (peek(Token.Type.IDENTIFIER)) {
             String first = tokenToString(Token.Type.IDENTIFIER);
-            if(peek("(")){
+            if (peek("(")) {
                 match("(");
                 List<Ast.Expression> arguments = new ArrayList<>();
-                while (!peek(")")){
+                while (!peek(")")) {
                     arguments.add(parseExpression());
-                    if(peek(",")){
+                    if (peek(",")) {
                         match(",");
 
-                        if(peek(")")){
+                        if (peek(")")) {
                             //error that there is a closing bracket after a comma
-                            throw new ParseException("PARSE ERRORRRR!", errorIndex(false));
+                            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
                         }
                     }
                 }
-                if(peek(")")){
+                if (peek(")")) {
                     match(")");
                     return new Ast.Expression.Function(first, arguments);
                 }
                 //error that there is no closing bracket on function
-                throw new ParseException("PARSE ERRORRRR!", errorIndex(true));
-            } else if (peek("[")){
+                throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+            } else if (peek("[")) {
                 match("[");
                 Ast.Expression second = parseExpression();
-                if(peek("]")){
+                if (peek("]")) {
                     match("]");
                     return new Ast.Expression.Access(Optional.of(second), first);
-                }else{
+                } else {
                     //error that it doesn't end in a ']'
-                    if(peek(".")) {
-                        throw new ParseException("PARSE ERRORRRR!", errorIndex(false));
-                    }else{
-                        throw new ParseException("PARSE ERRORRRR!", errorIndex(true));
+                    if (peek(".")) {
+                        throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+                    } else {
+                        throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
                     }
                 }
-            }else{
+            } else {
                 //just return an identifier
                 return new Ast.Expression.Access(Optional.empty(), first);
             }
-        }else{
+        } else {
             //error that there is nothing to peek/match as a primary expression
-            throw new ParseException("PARSE ERRORRRR!", errorIndex(true));
+            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
         }
     }
 
