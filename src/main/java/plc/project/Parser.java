@@ -274,7 +274,7 @@ public final class Parser {
     public List<Ast.Statement> parseBlock() throws ParseException {
         ArrayList<Ast.Statement> statements = new ArrayList<>();
         //TODO make sure this covers all cases for statement building
-        while (!peek("ELSE") || !peek("END") || !peek("DEFAULT") || !peek("CASE")) {
+        while (!peek("ELSE") && !peek("END") && !peek("DEFAULT") && !peek("CASE")) {
             statements.add(parseStatement());
         }
         return statements;
@@ -371,6 +371,7 @@ public final class Parser {
         List<Ast.Statement> elses = new ArrayList<>();
 
         if (peek("DO")) {
+            match("DO");
             //TODO check this block
             then = parseBlock();
             if (peek("ELSE")) {
@@ -379,7 +380,7 @@ public final class Parser {
                 elses = parseBlock();
             }
             if (peek("END")) {
-                match("MATCH");
+                match("END");
                 return new Ast.Statement.If(first, then, elses);
             }
             //no ELSE or END
