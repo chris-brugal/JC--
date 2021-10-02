@@ -49,7 +49,34 @@ public final class Parser {
      * Parses the {@code source} rule.
      */
     public Ast.Source parseSource() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        List<Ast.Global> globs = new ArrayList<>();
+        List<Ast.Function> funcs = new ArrayList<>();
+
+        if(peek("LIST") || peek("VAR") || peek("VAL")) {
+            while (peek("LIST") || peek("VAR") || peek("VAL")) {
+                globs.add(parseGlobal());
+//             if(tokens.has(0) && !peek("DEF") && !peek("LIST") && !peek("VAR") && !peek("VAL")){
+//                 //This token is not a global or a function so error
+//                 throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+//             }
+            }
+        }
+        if (peek("FUN")){
+            while(peek("FUN")){
+                funcs.add(parseFunction());
+                if(tokens.has(0) && !peek("FUN")){
+                    //This token is not a function and theres nothing else
+                    throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+                }
+            }
+        }
+
+        if(tokens.has(0)){
+            //lef tover tokens that dont belong
+            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+        }else{
+            return new Ast.Source(globs, funcs);
+        }
     }
 
     /**
@@ -57,7 +84,25 @@ public final class Parser {
      * next tokens start a field, aka {@code LET}.
      */
     public Ast.Global parseGlobal() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        Ast.Global glob;
+        if(peek("LIST")){
+            glob = parseList();
+        }else if (peek("VAR")){
+            glob = parseMutable();
+        } else if (peek("VAL")){
+            glob = parseImmutable();
+        }else{
+            // missing start of global
+            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+        }
+
+        if(peek(";")){
+            match(";");
+            return glob;
+        }else{
+            // missing
+            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+        }
     }
 
     /**
@@ -65,7 +110,48 @@ public final class Parser {
      * next token declares a list, aka {@code LIST}.
      */
     public Ast.Global parseList() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        match("LIST");
+        String first;
+        List<Ast.Expression> list = new ArrayList<>();
+
+        if (peek(Token.Type.IDENTIFIER)) {
+            first = tokens.get(0).getLiteral();
+            match(Token.Type.IDENTIFIER);
+            if (peek("=")) {
+                match("=");
+                if (peek("[")) {
+                    match("[");
+                    while (!peek("]")) {
+                        list.add(parseExpression());
+                        if (peek(",")) {
+                            match(",");
+                            if (peek("]")) {
+                                //bad comma then ]
+                                throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+                            }
+                        }
+                    }
+                    if (peek("]")) {
+                        match("]");
+                        Ast.Expression.PlcList PLClist = new Ast.Expression.PlcList(list);
+                        return new Ast.Global(first, true, Optional.of(PLClist));
+                    } else {
+                        // missing ]
+                        throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+                    }
+                }
+                else{
+                    // missing [
+                    throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+                }
+            } else {
+                // missing =
+                throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+            }
+        } else {
+            // missing identifier
+            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+        }
     }
 
     /**
@@ -73,7 +159,25 @@ public final class Parser {
      * next token declares a mutable global variable, aka {@code VAR}.
      */
     public Ast.Global parseMutable() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        match("VAR");
+        String first;
+
+        if (peek(Token.Type.IDENTIFIER)) {
+            first = tokens.get(0).getLiteral();
+            match(Token.Type.IDENTIFIER);
+            if (peek("=")) {
+                match("=");
+                Ast.Expression exp = parseExpression();
+                return new Ast.Global(first, true, Optional.of(exp));
+            } else {
+                //make sure this doesnt cause problems since there
+                // may be something after that isnt a = so prev if statement fails
+                return new Ast.Global(first, true, Optional.empty());
+            }
+        } else {
+            // missing identifier
+            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+        }
     }
 
     /**
@@ -81,7 +185,24 @@ public final class Parser {
      * next token declares an immutable global variable, aka {@code VAL}.
      */
     public Ast.Global parseImmutable() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        match("VAL");
+        String first;
+
+        if (peek(Token.Type.IDENTIFIER)) {
+            first = tokens.get(0).getLiteral();
+            match(Token.Type.IDENTIFIER);
+            if (peek("=")) {
+                match("=");
+                Ast.Expression exp = parseExpression();
+                return new Ast.Global(first, false, Optional.of(exp));
+            } else {
+                // Missing equals sign
+                throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+            }
+        } else {
+            // missing identifier
+            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+        }
     }
 
     /**
@@ -89,7 +210,61 @@ public final class Parser {
      * next tokens start a method, aka {@code DEF}.
      */
     public Ast.Function parseFunction() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        match("FUN");
+        String first;
+        List<String> params = new ArrayList<>();
+        List<Ast.Statement> statements = new ArrayList<>();
+
+        if (peek(Token.Type.IDENTIFIER)) {
+            first = tokens.get(0).getLiteral();
+            match(Token.Type.IDENTIFIER);
+            if (peek("(")) {
+                match("(");
+                while (peek(Token.Type.IDENTIFIER)) {
+                    params.add(tokens.get(0).getLiteral());
+                    match(Token.Type.IDENTIFIER);
+                    if (peek(",")) {
+                        match(",");
+                        if (!peek(Token.Type.IDENTIFIER)) {
+                            // missing identifier after comma
+                            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+                        }
+                    } else if (peek(Token.Type.IDENTIFIER)) {
+                        // two identifiers back to back
+                        throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+                    }
+                }
+                if (peek(")")) {
+                    match(")");
+                    if (peek("DO")) {
+                        match("DO");
+                        //TODO check block
+                        statements = parseBlock();
+                        if (peek("END")) {
+                            match("END");
+                            return new Ast.Function(first, params, statements);
+                        } else {
+                            // missing END
+                            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+                        }
+
+                    } else {
+                        // missing DO
+                        throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+                    }
+                } else {
+                    // missing ) with no params
+                    throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+                }
+            } else {
+                //missing (
+                throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+            }
+        } else {
+            //missing IDENTIFIER
+            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+        }
+
     }
 
     /**
@@ -97,7 +272,12 @@ public final class Parser {
      * preceding token indicates the opening a block.
      */
     public List<Ast.Statement> parseBlock() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        ArrayList<Ast.Statement> statements = new ArrayList<>();
+        //TODO make sure this covers all cases for statement building
+        while (!peek("ELSE") || !peek("END") || !peek("DEFAULT") || !peek("CASE")) {
+            statements.add(parseStatement());
+        }
+        return statements;
     }
 
     /**
@@ -106,24 +286,36 @@ public final class Parser {
      * statement, then it is an expression/assignment statement.
      */
     public Ast.Statement parseStatement() throws ParseException {
-        Ast.Expression first = parseExpression();
-        if (peek("=")) {
-            match("=");
-            Ast.Expression second = parseExpression();
-            if (peek(";")) {
-                match(";");
-                return new Ast.Statement.Assignment(first, second);
-            } else {
-                //no closing semicolon
-                throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
-            }
+        if (peek("LET")) {
+            return parseDeclarationStatement();
+        } else if (peek("SWITCH")) {
+            return parseSwitchStatement();
+        } else if (peek("IF")) {
+            return parseIfStatement();
+        } else if (peek("WHILE")) {
+            return parseWhileStatement();
+        } else if (peek("RETURN")) {
+            return parseReturnStatement();
         } else {
-            if (peek(";")) {
-                match(";");
-                return new Ast.Statement.Expression(first);
+            Ast.Expression first = parseExpression();
+            if (peek("=")) {
+                match("=");
+                Ast.Expression second = parseExpression();
+                if (peek(";")) {
+                    match(";");
+                    return new Ast.Statement.Assignment(first, second);
+                } else {
+                    //no closing semicolon
+                    throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+                }
             } else {
-                //no closing semicolon
-                throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+                if (peek(";")) {
+                    match(";");
+                    return new Ast.Statement.Expression(first);
+                } else {
+                    //no closing semicolon
+                    throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+                }
             }
         }
     }
@@ -134,7 +326,37 @@ public final class Parser {
      * statement, aka {@code LET}.
      */
     public Ast.Statement.Declaration parseDeclarationStatement() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        match("LET");
+        String first;
+
+        if (peek(Token.Type.IDENTIFIER)) {
+            first = tokens.get(0).getLiteral();
+            match(Token.Type.IDENTIFIER);
+
+            if (peek("=")) {
+                match("=");
+                //TODO may throw error? will have to check
+                Ast.Expression value = parseExpression();
+                if (peek(";")) {
+                    match(";");
+                    return new Ast.Statement.Declaration(first, Optional.of(value));
+                } else {
+                    //missing ;
+                    throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+                }
+            } else {
+                if (peek(";")) {
+                    match(";");
+                    return new Ast.Statement.Declaration(first, Optional.empty());
+                } else {
+                    //missing ; and no equals
+                    throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+                }
+            }
+        } else {
+            //missing IDENTIFIER
+            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+        }
     }
 
     /**
@@ -143,7 +365,29 @@ public final class Parser {
      * {@code IF}.
      */
     public Ast.Statement.If parseIfStatement() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        match("IF");
+        Ast.Expression first = parseExpression();
+        List<Ast.Statement> then = new ArrayList<>();
+        List<Ast.Statement> elses = new ArrayList<>();
+
+        if (peek("DO")) {
+            //TODO check this block
+            then = parseBlock();
+            if (peek("ELSE")) {
+                match("ELSE");
+                //TODO check block
+                elses = parseBlock();
+            }
+            if (peek("END")) {
+                match("MATCH");
+                return new Ast.Statement.If(first, then, elses);
+            }
+            //no ELSE or END
+            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+        } else {
+            //missing DO
+            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+        }
     }
 
     /**
@@ -152,7 +396,20 @@ public final class Parser {
      * {@code SWITCH}.
      */
     public Ast.Statement.Switch parseSwitchStatement() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        match("SWITCH");
+        Ast.Expression first = parseExpression();
+        List<Ast.Statement.Case> cases = new ArrayList<>();
+
+        if (peek("CASE") || peek("DEFAULT")) {
+            while (peek("CASE") || peek("DEFAULT")) {
+                cases.add(parseCaseStatement());
+            }
+            return new Ast.Statement.Switch(first, cases);
+        } else {
+            //SWITCH with no case or default
+            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+        }
+
     }
 
     /**
@@ -161,7 +418,36 @@ public final class Parser {
      * default block of a switch statement, aka {@code CASE} or {@code DEFAULT}.
      */
     public Ast.Statement.Case parseCaseStatement() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        List<Ast.Statement> statements = new ArrayList<>();
+
+        if (peek("CASE")) {
+            match("CASE");
+            Ast.Expression first = parseExpression();
+            if (peek(":")) {
+                match(":");
+                //TODO check block
+                statements = parseBlock();
+                return new Ast.Statement.Case(Optional.of(first), statements);
+            } else {
+                //missing :
+                throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+            }
+        } else if (peek("DEFAULT")) {
+            match("DEFAULT");
+            //TODO check block
+            statements = parseBlock();
+            if (peek("END")) {
+                match("END");
+                return new Ast.Statement.Case(Optional.empty(), statements);
+            } else {
+                //no END
+                throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+            }
+
+        } else {
+            //nothing in the switch statement, cant parse case
+            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+        }
     }
 
     /**
@@ -170,7 +456,25 @@ public final class Parser {
      * {@code WHILE}.
      */
     public Ast.Statement.While parseWhileStatement() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        match("WHILE");
+        Ast.Expression first = parseExpression();
+        List<Ast.Statement> statements = new ArrayList<>();
+
+        if (peek("DO")) {
+            match("DO");
+            //TODO check block
+            statements = parseBlock();
+            if (peek("END")) {
+                match("END");
+                return new Ast.Statement.While(first, statements);
+            } else {
+                //missing END
+                throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+            }
+        } else {
+            //missing DO
+            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+        }
     }
 
     /**
@@ -179,7 +483,17 @@ public final class Parser {
      * {@code RETURN}.
      */
     public Ast.Statement.Return parseReturnStatement() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        match("RETURN");
+
+        Ast.Expression first = parseExpression();
+
+        if (peek(";")) {
+            match(";");
+            return new Ast.Statement.Return(first);
+        } else {
+            //missing semicolon
+            throw new ParseException("PARSE ERRORRRR!", errorIndex(tokens.has(0)));
+        }
     }
 
     /**
