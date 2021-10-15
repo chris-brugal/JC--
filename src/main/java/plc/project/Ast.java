@@ -1,22 +1,21 @@
 package plc.project;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 /**
- * See the Parser assignment specification for specific notes on each AST class
- * and how to use it.
+ * See the Interpreter and Parser assignment specifications for specific notes on each AST class
+ * and how they are used.
  */
 public abstract class Ast {
 
     public static final class Source extends Ast {
 
         private final List<Global> globals;
-        private final List<Function> functions;
+        private final List<Ast.Function> functions;
 
-        public Source(List<Global> globals, List<Function> functions) {
+        public Source(List<Global> globals, List<Ast.Function> functions) {
             this.globals = globals;
             this.functions = functions;
         }
@@ -25,7 +24,7 @@ public abstract class Ast {
             return globals;
         }
 
-        public List<Function> getFunctions() {
+        public List<Ast.Function> getFunctions() {
             return functions;
         }
 
@@ -50,9 +49,9 @@ public abstract class Ast {
 
         private final String name;
         private final boolean mutable;
-        private final Optional<Expression> value;
+        private final Optional<Ast.Expression> value;
 
-        public Global(String name, boolean mutable, Optional<Expression> value) {
+        public Global(String name, boolean mutable, Optional<Ast.Expression> value) {
             this.name = name;
             this.mutable = mutable;
             this.value = value;
@@ -66,7 +65,7 @@ public abstract class Ast {
             return mutable;
         }
 
-        public Optional<Expression> getValue() {
+        public Optional<Ast.Expression> getValue() {
             return value;
         }
 
@@ -114,10 +113,10 @@ public abstract class Ast {
 
         @Override
         public boolean equals(Object obj) {
-            return obj instanceof Function &&
-                    name.equals(((Function) obj).name) &&
-                    parameters.equals(((Function) obj).parameters) &&
-                    statements.equals(((Function) obj).statements);
+            return obj instanceof Ast.Function &&
+                    name.equals(((Ast.Function) obj).name) &&
+                    parameters.equals(((Ast.Function) obj).parameters) &&
+                    statements.equals(((Ast.Function) obj).statements);
         }
 
         @Override
@@ -147,8 +146,8 @@ public abstract class Ast {
 
             @Override
             public boolean equals(Object obj) {
-                return obj instanceof Statement.Expression &&
-                        expression.equals(((Statement.Expression) obj).expression);
+                return obj instanceof Ast.Statement.Expression &&
+                        expression.equals(((Ast.Statement.Expression) obj).expression);
             }
 
             @Override
@@ -277,9 +276,9 @@ public abstract class Ast {
         public static final class Switch extends Statement {
 
             private final Ast.Expression condition;
-            private final List<Case> cases;
+            private final List<Ast.Statement.Case> cases;
 
-            public Switch(Ast.Expression condition, List<Case> cases) {
+            public Switch(Ast.Expression condition, List<Ast.Statement.Case> cases) {
                 this.condition = condition;
                 this.cases = cases;
             }
@@ -288,7 +287,7 @@ public abstract class Ast {
                 return condition;
             }
 
-            public List<Case> getCases() { return cases; }
+            public List<Ast.Statement.Case> getCases() { return cases; }
 
             @Override
             public boolean equals(Object obj) {
@@ -408,7 +407,7 @@ public abstract class Ast {
 
     public static abstract class Expression extends Ast {
 
-        public static final class Literal extends Expression {
+        public static final class Literal extends Ast.Expression {
 
             private final Object literal;
 
@@ -435,15 +434,15 @@ public abstract class Ast {
 
         }
 
-        public static final class Group extends Expression {
+        public static final class Group extends Ast.Expression {
 
-            private final Expression expression;
+            private final Ast.Expression expression;
 
-            public Group(Expression expression) {
+            public Group(Ast.Expression expression) {
                 this.expression = expression;
             }
 
-            public Expression getExpression() {
+            public Ast.Expression getExpression() {
                 return expression;
             }
 
@@ -462,13 +461,13 @@ public abstract class Ast {
 
         }
 
-        public static final class Binary extends Expression {
+        public static final class Binary extends Ast.Expression {
 
             private final String operator;
-            private final Expression left;
-            private final Expression right;
+            private final Ast.Expression left;
+            private final Ast.Expression right;
 
-            public Binary(String operator, Expression left, Expression right) {
+            public Binary(String operator, Ast.Expression left, Ast.Expression right) {
                 this.operator = operator;
                 this.left = left;
                 this.right = right;
@@ -478,11 +477,11 @@ public abstract class Ast {
                 return operator;
             }
 
-            public Expression getLeft() {
+            public Ast.Expression getLeft() {
                 return left;
             }
 
-            public Expression getRight() {
+            public Ast.Expression getRight() {
                 return right;
             }
 
@@ -505,17 +504,17 @@ public abstract class Ast {
 
         }
 
-        public static final class Access extends Expression {
+        public static final class Access extends Ast.Expression {
 
-            private final Optional<Expression> offset;
+            private final Optional<Ast.Expression> offset;
             private final String name;
 
-            public Access(Optional<Expression> offset, String name) {
+            public Access(Optional<Ast.Expression> offset, String name) {
                 this.offset = offset;
                 this.name = name;
             }
 
-            public Optional<Expression> getOffset() {
+            public Optional<Ast.Expression> getOffset() {
                 return offset;
             }
 
@@ -540,12 +539,12 @@ public abstract class Ast {
 
         }
 
-        public static final class Function extends Expression {
+        public static final class Function extends Ast.Expression {
 
             private final String name;
-            private final List<Expression> arguments;
+            private final List<Ast.Expression> arguments;
 
-            public Function(String name, List<Expression> arguments) {
+            public Function(String name, List<Ast.Expression> arguments) {
                 this.name = name;
                 this.arguments = arguments;
             }
@@ -554,15 +553,15 @@ public abstract class Ast {
                 return name;
             }
 
-            public List<Expression> getArguments() {
+            public List<Ast.Expression> getArguments() {
                 return arguments;
             }
 
             @Override
             public boolean equals(Object obj) {
-                return obj instanceof Expression.Function &&
-                        name.equals(((Expression.Function) obj).name) &&
-                        arguments.equals(((Expression.Function) obj).arguments);
+                return obj instanceof Ast.Expression.Function &&
+                        name.equals(((Ast.Expression.Function) obj).name) &&
+                        arguments.equals(((Ast.Expression.Function) obj).arguments);
             }
 
             @Override
@@ -575,33 +574,110 @@ public abstract class Ast {
 
         }
 
-        public static final class PlcList extends Expression {
+        public static final class PlcList extends Ast.Expression {
 
-            private final List<Expression> values;
+            private final List<Ast.Expression> values;
 
-            public PlcList(List<Expression> values) {
+            public PlcList(List<Ast.Expression> values) {
                 this.values = values;
             }
 
-            public List<Expression> getValues() {
+            public List<Ast.Expression> getValues() {
                 return values;
             }
 
             @Override
             public boolean equals(Object obj) {
-                return obj instanceof PlcList &&
-                        values.equals(((PlcList) obj).values);
+                return obj instanceof Ast.Expression.PlcList &&
+                        values.equals(((Ast.Expression.PlcList) obj).values);
             }
 
             @Override
             public String toString() {
                 return "Ast.Expression.PlcList{" +
-                        ", values=[" + values + "]" +
+                        "values=[" + values + "]" +
                         '}';
             }
 
         }
 
+    }
+
+    public interface Visitor<T> {
+
+        default T visit(Ast ast) {
+            if (ast instanceof Ast.Source) {
+                return visit((Ast.Source) ast);
+            } else if (ast instanceof Ast.Global) {
+                return visit((Ast.Global) ast);
+            } else if (ast instanceof Ast.Function) {
+                return visit((Ast.Function) ast);
+            } else if (ast instanceof Ast.Statement.Expression) {
+                return visit((Ast.Statement.Expression) ast);
+            } else if (ast instanceof Ast.Statement.Declaration) {
+                return visit((Ast.Statement.Declaration) ast);
+            } else if (ast instanceof Ast.Statement.Assignment) {
+                return visit((Ast.Statement.Assignment) ast);
+            } else if (ast instanceof Ast.Statement.If) {
+                return visit((Ast.Statement.If) ast);
+            } else if (ast instanceof Ast.Statement.Switch) {
+                return visit((Ast.Statement.Switch) ast);
+            } else if (ast instanceof Ast.Statement.Case) {
+                return visit((Ast.Statement.Case) ast);
+            } else if (ast instanceof Ast.Statement.While) {
+                return visit((Ast.Statement.While) ast);
+            } else if (ast instanceof Ast.Statement.Return) {
+                return visit((Ast.Statement.Return) ast);
+            } else if (ast instanceof Ast.Expression.Literal) {
+                return visit((Ast.Expression.Literal) ast);
+            } else if (ast instanceof Ast.Expression.Group) {
+                return visit((Ast.Expression.Group) ast);
+            } else if (ast instanceof Ast.Expression.Binary) {
+                return visit((Ast.Expression.Binary) ast);
+            } else if (ast instanceof Ast.Expression.Access) {
+                return visit((Ast.Expression.Access) ast);
+            } else if (ast instanceof Ast.Expression.Function) {
+                return visit((Ast.Expression.Function) ast);
+            } else if (ast instanceof Ast.Expression.PlcList) {
+                return visit((Ast.Expression.PlcList) ast);
+            } else {
+                throw new AssertionError("Unimplemented AST type: " + ast.getClass().getName() + ".");
+            }
+        }
+
+        T visit(Ast.Source ast);
+
+        T visit(Ast.Global ast);
+
+        T visit(Ast.Function ast);
+
+        T visit(Ast.Statement.Expression ast);
+
+        T visit(Ast.Statement.Declaration ast);
+
+        T visit(Ast.Statement.Assignment ast);
+
+        T visit(Ast.Statement.If ast);
+
+        T visit(Ast.Statement.Switch ast);
+
+        T visit(Ast.Statement.Case ast);
+
+        T visit(Ast.Statement.While ast);
+
+        T visit(Ast.Statement.Return ast);
+
+        T visit(Ast.Expression.Literal ast);
+
+        T visit(Ast.Expression.Group ast);
+
+        T visit(Ast.Expression.Binary ast);
+
+        T visit(Ast.Expression.Access ast);
+
+        T visit(Ast.Expression.Function ast);
+
+        T visit(Ast.Expression.PlcList ast);
     }
 
 }

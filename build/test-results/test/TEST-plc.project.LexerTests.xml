@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="plc.project.LexerTests" tests="28" skipped="0" failures="0" errors="0" timestamp="2021-10-15T19:24:00" hostname="Christophers-MacBook-Pro.local" time="0.063">
+  <properties/>
+  <testcase name="testException()" classname="plc.project.LexerTests" time="0.004"/>
+  <testcase name="testCharacter(String, String, boolean)[1]" classname="plc.project.LexerTests" time="0.002"/>
+  <testcase name="testCharacter(String, String, boolean)[2]" classname="plc.project.LexerTests" time="0.0"/>
+  <testcase name="testCharacter(String, String, boolean)[3]" classname="plc.project.LexerTests" time="0.001"/>
+  <testcase name="testCharacter(String, String, boolean)[4]" classname="plc.project.LexerTests" time="0.001"/>
+  <testcase name="testExamples(String, String, List)[1]" classname="plc.project.LexerTests" time="0.002"/>
+  <testcase name="testExamples(String, String, List)[2]" classname="plc.project.LexerTests" time="0.002"/>
+  <testcase name="testOperator(String, String, boolean)[1]" classname="plc.project.LexerTests" time="0.001"/>
+  <testcase name="testOperator(String, String, boolean)[2]" classname="plc.project.LexerTests" time="0.001"/>
+  <testcase name="testOperator(String, String, boolean)[3]" classname="plc.project.LexerTests" time="0.001"/>
+  <testcase name="testOperator(String, String, boolean)[4]" classname="plc.project.LexerTests" time="0.0"/>
+  <testcase name="testDecimal(String, String, boolean)[1]" classname="plc.project.LexerTests" time="0.0"/>
+  <testcase name="testDecimal(String, String, boolean)[2]" classname="plc.project.LexerTests" time="0.001"/>
+  <testcase name="testDecimal(String, String, boolean)[3]" classname="plc.project.LexerTests" time="0.0"/>
+  <testcase name="testDecimal(String, String, boolean)[4]" classname="plc.project.LexerTests" time="0.001"/>
+  <testcase name="testInteger(String, String, boolean)[1]" classname="plc.project.LexerTests" time="0.001"/>
+  <testcase name="testInteger(String, String, boolean)[2]" classname="plc.project.LexerTests" time="0.001"/>
+  <testcase name="testInteger(String, String, boolean)[3]" classname="plc.project.LexerTests" time="0.0"/>
+  <testcase name="testInteger(String, String, boolean)[4]" classname="plc.project.LexerTests" time="0.0"/>
+  <testcase name="testString(String, String, boolean)[1]" classname="plc.project.LexerTests" time="0.0"/>
+  <testcase name="testString(String, String, boolean)[2]" classname="plc.project.LexerTests" time="0.0"/>
+  <testcase name="testString(String, String, boolean)[3]" classname="plc.project.LexerTests" time="0.001"/>
+  <testcase name="testString(String, String, boolean)[4]" classname="plc.project.LexerTests" time="0.001"/>
+  <testcase name="testString(String, String, boolean)[5]" classname="plc.project.LexerTests" time="0.001"/>
+  <testcase name="testIdentifier(String, String, boolean)[1]" classname="plc.project.LexerTests" time="0.001"/>
+  <testcase name="testIdentifier(String, String, boolean)[2]" classname="plc.project.LexerTests" time="0.002"/>
+  <testcase name="testIdentifier(String, String, boolean)[3]" classname="plc.project.LexerTests" time="0.0"/>
+  <testcase name="testIdentifier(String, String, boolean)[4]" classname="plc.project.LexerTests" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

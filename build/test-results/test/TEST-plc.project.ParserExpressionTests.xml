@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="plc.project.ParserExpressionTests" tests="18" skipped="0" failures="0" errors="0" timestamp="2021-10-15T19:24:00" hostname="Christophers-MacBook-Pro.local" time="0.037">
+  <properties/>
+  <testcase name="testAccessExpression(String, List, Access)[1]" classname="plc.project.ParserExpressionTests" time="0.001"/>
+  <testcase name="testAccessExpression(String, List, Access)[2]" classname="plc.project.ParserExpressionTests" time="0.0"/>
+  <testcase name="testGroupExpression(String, List, Group)[1]" classname="plc.project.ParserExpressionTests" time="0.001"/>
+  <testcase name="testGroupExpression(String, List, Group)[2]" classname="plc.project.ParserExpressionTests" time="0.0"/>
+  <testcase name="testLiteralExpression(String, List, Literal)[1]" classname="plc.project.ParserExpressionTests" time="0.0"/>
+  <testcase name="testLiteralExpression(String, List, Literal)[2]" classname="plc.project.ParserExpressionTests" time="0.0"/>
+  <testcase name="testLiteralExpression(String, List, Literal)[3]" classname="plc.project.ParserExpressionTests" time="0.0"/>
+  <testcase name="testLiteralExpression(String, List, Literal)[4]" classname="plc.project.ParserExpressionTests" time="0.001"/>
+  <testcase name="testLiteralExpression(String, List, Literal)[5]" classname="plc.project.ParserExpressionTests" time="0.001"/>
+  <testcase name="testLiteralExpression(String, List, Literal)[6]" classname="plc.project.ParserExpressionTests" time="0.0"/>
+  <testcase name="testFunctionExpression(String, List, Function)[1]" classname="plc.project.ParserExpressionTests" time="0.001"/>
+  <testcase name="testFunctionExpression(String, List, Function)[2]" classname="plc.project.ParserExpressionTests" time="0.001"/>
+  <testcase name="testAssignmentStatement(String, List, Assignment)[1]" classname="plc.project.ParserExpressionTests" time="0.002"/>
+  <testcase name="testBinaryExpression(String, List, Binary)[1]" classname="plc.project.ParserExpressionTests" time="0.001"/>
+  <testcase name="testBinaryExpression(String, List, Binary)[2]" classname="plc.project.ParserExpressionTests" time="0.001"/>
+  <testcase name="testBinaryExpression(String, List, Binary)[3]" classname="plc.project.ParserExpressionTests" time="0.001"/>
+  <testcase name="testBinaryExpression(String, List, Binary)[4]" classname="plc.project.ParserExpressionTests" time="0.0"/>
+  <testcase name="testExpressionStatement(String, List, Expression)[1]" classname="plc.project.ParserExpressionTests" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
