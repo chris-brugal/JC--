@@ -26,17 +26,47 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Source ast) {
-        throw new UnsupportedOperationException(); //TODO
+        for(Ast.Global global: ast.getGlobals()){
+            visit(global);
+        }
+        Environment.PlcObject mainResult= null;
+        for(int i =0; i<ast.getFunctions().size();i++){
+            if(ast.getFunctions().get(i).getName().equals("main")){
+                mainResult = visit(ast.getFunctions().get(i));
+            }else{
+                visit(ast.getFunctions().get(i));
+            }
+        }
+                if(mainResult== null){
+                    throw new RuntimeException("wrong");
+                }
+        return mainResult;
+
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Global ast) {
-        throw new UnsupportedOperationException(); //TODO
+        if (ast.getValue().isPresent()){
+            scope.defineVariable(ast.getName(), ast.getMutable(), visit(ast.getValue().get()));
+        } else{
+            scope.defineVariable(ast.getName(), ast.getMutable(), Environment.NIL );
+        }
+        return Environment.NIL;
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Function ast) {
-        throw new UnsupportedOperationException(); //TODO
+        try {
+            scope = new Scope(scope);
+            ast.getParameters();
+            for(Ast.Statement statement: ast.getStatements()){
+                visit(statement);
+            }
+        }finally{
+            scope = scope.getParent();
+        }
+        return Environment.NIL;
+        //throw new UnsupportedOperationException(); //TODO
     }
 
     @Override
@@ -46,7 +76,13 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Declaration ast) {
-        throw new UnsupportedOperationException(); //TODO (in lecture)
+        if (ast.getValue().isPresent()){
+            scope.defineVariable(ast.getName(), true, visit(ast.getValue().get()));
+        } else{
+            scope.defineVariable(ast.getName(), true, Environment.NIL );
+        }
+        return Environment.NIL;
+
     }
 
     @Override
@@ -56,17 +92,62 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.If ast) {
-        throw new UnsupportedOperationException(); //TODO
+       if(requireType(Boolean.class, visit(ast.getCondition()))){
+           try {
+               scope = new Scope(scope);
+               for(Ast.Statement statement: ast.getThenStatements()){
+                   visit(statement);
+               }
+           }finally{
+               scope = scope.getParent();
+           }
+       } else {
+           try {
+               scope = new Scope(scope);
+               for (Ast.Statement statement : ast.getElseStatements()) {
+                   visit(statement);
+               }
+           } finally {
+               scope = scope.getParent();
+           }
+       }
+        return Environment.NIL;
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Switch ast) {
-        throw new UnsupportedOperationException(); //TODO
+        Boolean isDefault = true;
+        int amountCases=ast.getCases().size();
+        for(int i =0; i<amountCases-1;i++){ //we don't iterate on the last item in the case list because that would be the default case, and it doesn't have a value
+            if(ast.getCondition().equals(ast.getCases().get(i).getValue())){
+                try{
+                    isDefault = false;
+                    scope = new Scope(scope);
+                    for(Ast.Statement statement: ast.getCases().get(i).getStatements()){
+                        visit(statement);
+                    }
+                }finally{
+                    scope = scope.getParent();
+                }
+            }
+        }
+        if(isDefault){ //since default is the last item in the case list, we just visit the statements for the last case object in getCases()
+            try{
+                scope = new Scope(scope);
+                for(Ast.Statement statement: ast.getCases().get(amountCases-1).getStatements()){
+                    visit(statement);
+                }
+            }finally{
+                scope = scope.getParent();
+            }
+        }
+        return Environment.NIL;
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Case ast) {
-        throw new UnsupportedOperationException(); //TODO
+
+        return Environment.NIL;
     }
 
     @Override
@@ -215,11 +296,11 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             TODO not 100% sure abt this
                 Figure out how to connect both the scope and the ast expression that was passed in
             */
+
             Environment.PlcObject off = visit(ast.getOffset().get());
             Environment.PlcObject var = scope.lookupVariable(ast.getName()).getValue();
-            //ArrayList a = (ArrayList)var.getValue();
-            //a.get((int)off.getValue());
-            return off;
+            ArrayList a = (ArrayList)var.getValue();
+            return Environment.create(a.get((int)off.getValue()));
         }
         //TODO look into how to throw exceptions***************************************
         return scope.lookupVariable(ast.getName()).getValue();
