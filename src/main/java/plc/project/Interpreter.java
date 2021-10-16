@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
@@ -70,45 +71,179 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.While ast) {
-        throw new UnsupportedOperationException(); //TODO (in lecture)
+        while (requireType(Boolean.class, visit(ast.getCondition()))){
+            try {
+                scope = new Scope(scope);
+                for(Ast.Statement statement: ast.getStatements()){
+                    visit(statement);
+                }
+            }finally {
+                scope = scope.getParent();
+            }
+        }
+        return Environment.NIL;
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Return ast) {
-        throw new UnsupportedOperationException(); //TODO
+        Ast.Expression exp = ast.getValue();
+        return visit(exp);
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Expression.Literal ast) {
-        throw new UnsupportedOperationException(); //TODO
+        if(ast.getLiteral() != null){
+            return Environment.create(ast.getLiteral());
+        }else{
+            return Environment.NIL;
+        }
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Expression.Group ast) {
-        throw new UnsupportedOperationException(); //TODO
+        Ast.Expression exp = ast.getExpression();
+        return visit(exp);
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Expression.Binary ast) {
-        throw new UnsupportedOperationException(); //TODO
+        Environment.PlcObject l = visit(ast.getLeft());
+        Environment.PlcObject r = visit(ast.getRight());
+        String op = ast.getOperator();
+
+        if(Objects.equals(op, "&&")){
+            //check if right false, left false if neither, else ret true
+            if(r.getValue() instanceof Boolean && !(Boolean)r.getValue()){
+                //right false
+                return Environment.create(false);
+            }else if(l.getValue() instanceof Boolean && !(Boolean)l.getValue()){
+                //left false
+                return Environment.create(false);
+            }else{
+                if(r.getValue() instanceof Boolean){
+                    return Environment.create(true);
+                }
+            }
+        }
+        else if (Objects.equals(op, "||")){
+            System.out.println("higafhiads");
+            //check if right true, left true if neither, else ret false
+            if(l.getValue() instanceof Boolean && (Boolean)l.getValue()){
+                //right true
+                return Environment.create(true);
+            }
+            if(r.getValue() instanceof Boolean && (Boolean)r.getValue()){
+                //left true
+                return Environment.create(true);
+            }
+            if(l.getValue() instanceof Boolean){
+                if(r.getValue() instanceof Boolean){
+                    return Environment.create(false);
+                }
+                throw new RuntimeException();
+            }
+        }
+        else if (Objects.equals(op, "<")){
+            if(l.getValue() instanceof Comparable){
+                //check same type
+                if(requireType(l.getValue().getClass(), r) != null){
+                    //maybe all inline
+                    return Environment.create(((Comparable) l.getValue()).compareTo(r.getValue()) < 0);
+                }
+            }
+        }
+        else if (Objects.equals(op, ">")){
+            if(l.getValue() instanceof Comparable){
+                //check same type
+                if(requireType(l.getValue().getClass(), r) != null){
+                    return Environment.create(((Comparable) l.getValue()).compareTo(r.getValue()) > 0);
+                }
+            }
+        }
+        else if (Objects.equals(op, "==")){
+            boolean b = Objects.equals(l.getValue(), r.getValue());
+            return Environment.create(b);
+        }
+        else if (Objects.equals(op, "!=")){
+            boolean b = !Objects.equals(l.getValue(), r.getValue());
+            return Environment.create(b);
+        }
+        else if (Objects.equals(op, "+")){
+            if(l.getValue() instanceof BigInteger && r.getValue() instanceof BigInteger){
+                return Environment.create(requireType(BigInteger.class, l).add(requireType(BigInteger.class, r)));
+            }else if(l.getValue() instanceof BigDecimal && r.getValue() instanceof BigDecimal){
+                return Environment.create(requireType(BigDecimal.class, l).add(requireType(BigDecimal.class, r)));
+            }else if(l.getValue() instanceof String || r.getValue() instanceof String){
+                return Environment.create(requireType(String.class, l).concat(requireType(String.class, r)));
+            }
+        }
+        else if (Objects.equals(op, "-")){
+            if(l.getValue() instanceof BigInteger && r.getValue() instanceof BigInteger){
+                return Environment.create(requireType(BigInteger.class, l).subtract(requireType(BigInteger.class, r)));
+            }else if(l.getValue() instanceof BigDecimal && r.getValue() instanceof BigDecimal){
+                return Environment.create(requireType(BigDecimal.class, l).subtract(requireType(BigDecimal.class, r)));
+            }
+        }
+        else if (Objects.equals(op, "*")){
+            if(l.getValue() instanceof BigInteger && r.getValue() instanceof BigInteger){
+                return Environment.create(requireType(BigInteger.class, l).multiply(requireType(BigInteger.class, r)));
+            }else if(l.getValue() instanceof BigDecimal && r.getValue() instanceof BigDecimal){
+                return Environment.create(requireType(BigDecimal.class, l).multiply(requireType(BigDecimal.class, r)));
+            }
+        }
+        else if (Objects.equals(op, "/")){
+            if(l.getValue() instanceof BigInteger && r.getValue() instanceof BigInteger && r.toString().equals("0")){
+                //TODO look into this dividing by zero
+                throw new Return(Environment.NIL);
+            } else if(l.getValue() instanceof BigInteger && r.getValue() instanceof BigInteger){
+                return Environment.create(requireType(BigInteger.class, l).divide(requireType(BigInteger.class, r)));
+            } else if(l.getValue() instanceof BigDecimal && r.getValue() instanceof BigDecimal){
+                return Environment.create(requireType(BigDecimal.class, l).divide(requireType(BigDecimal.class, r), RoundingMode.HALF_EVEN));
+            }
+        }
+        else if (Objects.equals(op, "^")){
+            //TODO wait for response in MS Teams
+        }
+        //TODO look into the throwing exceptions for - and + more since there is a left and right value
+        throw new Return(Environment.NIL);
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Expression.Access ast) {
         if(ast.getOffset().isPresent()){
+            /*
+            TODO not 100% sure abt this
+                Figure out how to connect both the scope and the ast expression that was passed in
+            */
             Environment.PlcObject off = visit(ast.getOffset().get());
-            return off.get
+            Environment.PlcObject var = scope.lookupVariable(ast.getName()).getValue();
+            //ArrayList a = (ArrayList)var.getValue();
+            //a.get((int)off.getValue());
+            return off;
         }
+        //TODO look into how to throw exceptions***************************************
+        return scope.lookupVariable(ast.getName()).getValue();
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Expression.Function ast) {
-        throw new UnsupportedOperationException(); //TODO
+        try{
+            scope = new Scope(scope);
+            List<Environment.PlcObject> params = new ArrayList<>();
+            for(int i = 0; i < ast.getArguments().size(); i++){
+                Ast.Expression exp = ast.getArguments().get(i);
+                params.add(visit(exp));
+            }
+            return scope.lookupFunction(ast.getName(), params.size()).invoke(params);
+        }finally {
+            scope = scope.getParent();
+        }
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Expression.PlcList ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //TODO not 100% sure abt this
+        return new Environment.PlcObject(scope, ast.getValues());
     }
 
     /**
