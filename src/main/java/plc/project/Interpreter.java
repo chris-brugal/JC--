@@ -298,9 +298,9 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             */
 
             Environment.PlcObject off = visit(ast.getOffset().get());
-            Environment.PlcObject var = scope.lookupVariable(ast.getName()).getValue();
-            ArrayList a = (ArrayList)var.getValue();
-            return Environment.create(a.get((int)off.getValue()));
+            Environment.PlcObject parent = scope.getParent().lookupVariable(ast.getName()).getValue();
+            List<String> a = (List<String>) parent.getValue();
+            return Environment.create(a.get(((BigInteger) off.getValue()).intValue()));
         }
         //TODO look into how to throw exceptions***************************************
         return scope.lookupVariable(ast.getName()).getValue();
