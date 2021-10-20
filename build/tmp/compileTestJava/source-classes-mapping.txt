@@ -1,2 +1,0 @@
-plc/project/LexerTests.java
- plc.project.LexerTests

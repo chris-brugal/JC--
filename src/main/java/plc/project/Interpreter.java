@@ -87,17 +87,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Assignment ast) {
-        if(ast.getReceiver() instanceof Ast.Expression.Access){
-            if(((Ast.Expression.Access) ast.getReceiver()).getOffset().isPresent()){
-                Environment.PlcObject off = visit(((Ast.Expression.Access) ast.getReceiver()).getOffset().get());
-                Environment.PlcObject var = scope.lookupVariable(((Ast.Expression.Access) ast.getReceiver()).getName()).getValue();
-                ArrayList a = (ArrayList)var.getValue();
-                return Environment.create(a.get((int)off.getValue()));
-            }
-                scope.defineVariable(((Ast.Expression.Access) ast.getReceiver()).getName(), false, visit(((Ast.Expression.Literal)ast.getValue())));
-            //ast.
-        }
-        return Environment.NIL;
+        throw new UnsupportedOperationException(); //TODO
     }
 
     @Override
