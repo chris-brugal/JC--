@@ -55,15 +55,24 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Function ast) {
-        try {
-            scope = new Scope(scope);
-            ast.getParameters();
-            for(Ast.Statement statement: ast.getStatements()){
-                visit(statement);
+        scope.defineFunction(ast.getName(), ast.getParameters().size(), arguments ->{
+            try {
+                scope = new Scope(scope);
+                for(int i = 0; i < arguments.size(); i++){
+                    //not sure about the mutability part (:/)
+                    //scope.getParent().lookupVariable(ast.getParameters().get(i)).getMutable()
+                    scope.defineVariable(ast.getParameters().get(i), true ,arguments.get(i));
+                }
+                for(Ast.Statement statement: ast.getStatements()){
+                    visit(statement);
+                }
+            }catch (Return returnValue) {
+                return returnValue.value;
+            }finally {
+                scope = scope.getParent();
             }
-        }finally{
-            scope = scope.getParent();
-        }
+            return Environment.NIL;
+        });
         return Environment.NIL;
         //throw new UnsupportedOperationException(); //TODO
     }
@@ -99,7 +108,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             }
             Environment.PlcObject a=visit(ast.getReceiver());
             Environment.PlcObject b=visit(ast.getValue());
-           scope.defineVariable(((Ast.Expression.Access) ast.getReceiver()).getName(), false, (((Ast.Expression.Literal) ast.getValue()).getLiteral()));
+          // scope.defineVariable(((Ast.Expression.Access) ast.getReceiver()).getName(), false, (((Ast.Expression.Literal) ast.getValue()).getLiteral()));
             //ast.
         }else{
 
@@ -186,7 +195,8 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
     @Override
     public Environment.PlcObject visit(Ast.Statement.Return ast) {
         Ast.Expression exp = ast.getValue();
-        return visit(exp);
+        Environment.PlcObject ret = visit(exp);
+        throw new Return(ret);
     }
 
     @Override
@@ -302,6 +312,11 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         }
         else if (Objects.equals(op, "^")){
             //TODO wait for response in MS Teams
+            if(l.getValue() instanceof BigInteger && r.getValue() instanceof BigInteger){
+                return Environment.create(requireType(BigInteger.class, l).pow(requireType(Integer.class, r)));
+            } else if(l.getValue() instanceof BigDecimal && r.getValue() instanceof BigDecimal){
+                return Environment.create(requireType(BigDecimal.class, l).pow(requireType(Integer.class, r)));
+            }
         }
         //TODO look into the throwing exceptions for - and + more since there is a left and right value
         throw new Return(Environment.NIL);
