@@ -95,15 +95,15 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
                 //scope.defineVariable(((Ast.Expression.Access) ast.getReceiver()).getName(), true, Environment.create(a.get(((BigInteger) off.getValue()).intValue())));
                 Environment.PlcObject a=visit(ast.getReceiver());
                 Environment.PlcObject b=visit(ast.getValue());
-
+                //scope.
             }
             Environment.PlcObject a=visit(ast.getReceiver());
             Environment.PlcObject b=visit(ast.getValue());
-           scope.defineVariable(((Ast.Expression.Access) ast.getReceiver()).getName(), false, (((Ast.Expression.Literal) ast.getValue()).getLiteral()));
+           scope.defineVariable(((Ast.Expression.Access) ast.getReceiver()).getName(), false, visit(ast.getValue()));
             //ast.
         }else{
 
-            //throw new RuntimeException();
+            throw new RuntimeException();
         }
         return Environment.NIL;
     }
