@@ -29,7 +29,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         for(Ast.Global global: ast.getGlobals()){
             visit(global);
         }
-        Environment.PlcObject mainResult= null;
+        Environment.PlcObject mainResult= Environment.create(0);
         for(int i =0; i<ast.getFunctions().size();i++){
             if(ast.getFunctions().get(i).getName().equals("main")){
                 mainResult = visit(ast.getFunctions().get(i));
@@ -38,10 +38,9 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             }
         }
                 if(mainResult== null){
-                    throw new RuntimeException("wrong");
+                    throw new RuntimeException();
                 }
         return mainResult;
-
     }
 
     @Override
@@ -71,7 +70,8 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Expression ast) {
-        throw new UnsupportedOperationException(); //TODO
+        visit(ast.getExpression());
+        return Environment.NIL;
     }
 
     @Override
@@ -87,7 +87,25 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Assignment ast) {
-        throw new UnsupportedOperationException(); //TODO
+        if(ast.getReceiver() instanceof Ast.Expression.Access){
+            if(((Ast.Expression.Access) ast.getReceiver()).getOffset().isPresent()){
+                //Environment.PlcObject off = visit(((Ast.Expression.Access) ast.getReceiver()).getOffset().get());
+                //Environment.PlcObject parent = scope.getParent().lookupVariable(((Ast.Expression.Access) ast.getReceiver()).getName()).getValue();
+               // List<String> a = (List<String>) parent.getValue();
+                //scope.defineVariable(((Ast.Expression.Access) ast.getReceiver()).getName(), true, Environment.create(a.get(((BigInteger) off.getValue()).intValue())));
+                Environment.PlcObject a=visit(ast.getReceiver());
+                Environment.PlcObject b=visit(ast.getValue());
+
+            }
+            Environment.PlcObject a=visit(ast.getReceiver());
+            Environment.PlcObject b=visit(ast.getValue());
+           scope.defineVariable(((Ast.Expression.Access) ast.getReceiver()).getName(), false, (((Ast.Expression.Literal) ast.getValue()).getLiteral()));
+            //ast.
+        }else{
+
+            //throw new RuntimeException();
+        }
+        return Environment.NIL;
     }
 
     @Override
