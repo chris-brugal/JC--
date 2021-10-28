@@ -6,6 +6,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
@@ -96,24 +97,19 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
     @Override
     public Environment.PlcObject visit(Ast.Statement.Assignment ast) {
         if(ast.getReceiver() instanceof Ast.Expression.Access && ast.getReceiver()!=null){
-            /**
-             List<Object> items=new ArrayList<>();
-             for(Ast.Expression item: ast.getValues()){
-                  items.add(visit(item).getValue());
-             }
-             return Environment.create(items);
-
-            **/
             Environment.PlcObject varVal = visit(ast.getValue());
             if(((Ast.Expression.Access) ast.getReceiver()).getOffset().isPresent()){
-                Ast.Expression offset = ((Ast.Expression.Access) ast.getReceiver()).getOffset().get();
-                Environment.PlcObject temp = scope.lookupVariable(((Ast.Expression.Access) ast.getReceiver()).getName()).getValue();
+                Ast.Expression.Literal offset = (Ast.Expression.Literal) ((Ast.Expression.Access) ast.getReceiver()).getOffset().get();
+                Object val = offset.getLiteral();
 
-                /* Environment.PlcObject parent = scope.getParent().lookupVariable(((Ast.Expression.Access) ast.getReceiver()).getName()).getValue();
-               List<String> a = (List<String>) parent.getValue();
-               Environment.(a.get(((BigInteger) offset.getValue()).intValue()));
-               Environment.PlcObject temp=  scope.lookupVariable(((Ast.Expression.Access) ast.getReceiver()).getName()).getValue();
-               List<Environment.PlcObject> temp2 = temp;*/
+                Environment.PlcObject temp = scope.lookupVariable(((Ast.Expression.Access) ast.getReceiver()).getName()).getValue();
+                List<Object> a = (List<Object>) temp.getValue();
+
+                Ast.Expression.Access as = (((Ast.Expression.Access) ast.getReceiver()));
+                String name = as.getName();
+                Environment.Variable var = scope.lookupVariable(name);
+                a.set(((BigInteger)val).intValue(), varVal.getValue());
+                var.setValue(Environment.create(a));
             }else {
                 scope.lookupVariable(((Ast.Expression.Access) ast.getReceiver()).getName()).setValue(varVal);
             }
@@ -126,6 +122,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.If ast) {
+
        if(requireType(Boolean.class, visit(ast.getCondition()))){
            try {
                scope = new Scope(scope);
@@ -151,9 +148,14 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
     @Override
     public Environment.PlcObject visit(Ast.Statement.Switch ast) {
         Boolean isDefault = true;
+
         int amountCases=ast.getCases().size();
+          Object cond=  visit(ast.getCondition()).getValue();
+
         for(int i =0; i<amountCases-1;i++){ //we don't iterate on the last item in the case list because that would be the default case, and it doesn't have a value
-            if(ast.getCondition().equals(ast.getCases().get(i).getValue())){
+            Ast.Expression.Literal casey= (Ast.Expression.Literal) ast.getCases().get(i).getValue().get();
+
+            if(cond.equals(casey.getLiteral())){
                 try{
                     isDefault = false;
                     scope = new Scope(scope);
