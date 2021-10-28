@@ -245,7 +245,6 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             }
         }
         else if (Objects.equals(op, "||")){
-            System.out.println("higafhiads");
             //check if right true, left true if neither, else ret false
             if(l.getValue() instanceof Boolean && (Boolean)l.getValue()){
                 //right true
@@ -329,7 +328,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             }
         }
         //TODO look into the throwing exceptions for - and + more since there is a left and right value
-        throw new Return(Environment.NIL);
+        throw new RuntimeException();
     }
 
     @Override
@@ -343,9 +342,11 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             Environment.PlcObject off = visit(ast.getOffset().get());
             Environment.PlcObject parent = scope.getParent().lookupVariable(ast.getName()).getValue();
             List<String> a = (List<String>) parent.getValue();
+            if(((BigInteger) off.getValue()).intValue() > 0 || ((BigInteger) off.getValue()).intValue() >= a.size()){
+                throw new RuntimeException();
+            }
             return Environment.create(a.get(((BigInteger) off.getValue()).intValue()));
         }
-        //TODO look into how to throw exceptions***************************************
         return scope.lookupVariable(ast.getName()).getValue();
     }
 
