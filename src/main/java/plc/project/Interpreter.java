@@ -342,7 +342,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             Environment.PlcObject off = visit(ast.getOffset().get());
             Environment.PlcObject parent = scope.getParent().lookupVariable(ast.getName()).getValue();
             List<String> a = (List<String>) parent.getValue();
-            if(((BigInteger) off.getValue()).intValue() > 0 || ((BigInteger) off.getValue()).intValue() >= a.size()){
+            if(((BigInteger) off.getValue()).intValue() < 0 || ((BigInteger) off.getValue()).intValue() >= a.size()){
                 throw new RuntimeException();
             }
             return Environment.create(a.get(((BigInteger) off.getValue()).intValue()));
