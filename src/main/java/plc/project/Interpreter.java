@@ -102,18 +102,22 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
                   items.add(visit(item).getValue());
              }
              return Environment.create(items);
-            **/
-           Environment.PlcObject varVal = visit(ast.getValue());
-           scope.lookupVariable(((Ast.Expression.Access) ast.getReceiver()).getName()).setValue(varVal);
-           if(((Ast.Expression.Access) ast.getReceiver()).getOffset().isPresent()){
-               Ast.Expression offset = ((Ast.Expression.Access) ast.getReceiver()).getOffset().get();
 
-               Environment.PlcObject parent = scope.getParent().lookupVariable(((Ast.Expression.Access) ast.getReceiver()).getName()).getValue();
+            **/
+            Environment.PlcObject varVal = visit(ast.getValue());
+            if(((Ast.Expression.Access) ast.getReceiver()).getOffset().isPresent()){
+                Ast.Expression offset = ((Ast.Expression.Access) ast.getReceiver()).getOffset().get();
+                Environment.PlcObject temp = scope.lookupVariable(((Ast.Expression.Access) ast.getReceiver()).getName()).getValue();
+
+                /* Environment.PlcObject parent = scope.getParent().lookupVariable(((Ast.Expression.Access) ast.getReceiver()).getName()).getValue();
                List<String> a = (List<String>) parent.getValue();
                Environment.(a.get(((BigInteger) offset.getValue()).intValue()));
                Environment.PlcObject temp=  scope.lookupVariable(((Ast.Expression.Access) ast.getReceiver()).getName()).getValue();
-               List<Environment.PlcObject> temp2 = temp;
-           }
+               List<Environment.PlcObject> temp2 = temp;*/
+            }else {
+                scope.lookupVariable(((Ast.Expression.Access) ast.getReceiver()).getName()).setValue(varVal);
+            }
+
         }else{
             throw new RuntimeException();
         }
