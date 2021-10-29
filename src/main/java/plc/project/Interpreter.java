@@ -227,6 +227,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
     @Override
     public Environment.PlcObject visit(Ast.Expression.Binary ast) {
         Environment.PlcObject l = visit(ast.getLeft());
+        //check right after
         Environment.PlcObject r = visit(ast.getRight());
         String op = ast.getOperator();
 
@@ -352,17 +353,15 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Expression.Function ast) {
-        try{
-            scope = new Scope(scope);
+
+            //scope = new Scope(scope);
             List<Environment.PlcObject> params = new ArrayList<>();
             for(int i = 0; i < ast.getArguments().size(); i++){
                 Ast.Expression exp = ast.getArguments().get(i);
                 params.add(visit(exp));
             }
             return scope.lookupFunction(ast.getName(), params.size()).invoke(params);
-        }finally {
-            scope = scope.getParent();
-        }
+
     }
 
     @Override
