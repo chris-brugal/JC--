@@ -201,7 +201,11 @@ public final class Parser {
             } else {
                 //make sure this doesnt cause problems since there
                 // may be something after that isnt a = so prev if statement fails
-                return new Ast.Global(first, true, Optional.empty());
+                if(!type.equals("")){
+                    return new Ast.Global(first, type, true, Optional.empty());
+                }else{
+                    return new Ast.Global(first, true, Optional.empty());
+                }
             }
         } else {
             // missing identifier
