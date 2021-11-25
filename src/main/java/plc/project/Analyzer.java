@@ -3,6 +3,7 @@ package plc.project;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,47 +28,157 @@ public final class Analyzer implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Source ast) {
-        throw new UnsupportedOperationException();
+        for(int i=0; i <ast.getGlobals().size();i++){
+            visit(ast.getGlobals().get(i));
+        }
+        boolean main = false;
+        for(int i =0; i< ast.getFunctions().size();i++){
+            Ast.Function func = ast.getFunctions().get(i);
+            visit(func);
+            if(func.getName().equals("main") && func.getParameters().isEmpty() && func.getReturnTypeName().get().equals("Integer") ){
+                main = true;
+            }
+        }
+
+        if(!main){
+            throw new RuntimeException();
+        }
+        return null;
     }
 
     @Override
     public Void visit(Ast.Global ast) {
-        throw new UnsupportedOperationException();  // TODO
+        if(ast.getValue().isPresent()){
+            visit(ast.getValue().get());
+            requireAssignable(Environment.getType(ast.getTypeName()),ast.getValue().get().getType());
+            scope.defineVariable(ast.getName(), ast.getValue().get().getType().getJvmName(),ast.getValue().get().getType(), ast.getMutable(), ast.getVariable().getValue());
+        }else{
+            scope.defineVariable(ast.getName(), ast.getValue().get().getType().getJvmName(),Environment.getType(ast.getTypeName()), ast.getMutable(), Environment.NIL);
+        }
+        ast.setVariable(scope.lookupVariable(ast.getName()));
+
+        return null;
     }
 
     @Override
     public Void visit(Ast.Function ast) {
-        throw new UnsupportedOperationException();  // TODO
+        List<Environment.Type> param= new ArrayList<>();
+    for(Ast.Statement statement:ast.getStatements()){
+
+            scope = new Scope(scope);
+            visit(statement);
+
+            scope = scope.getParent();
+
+    }
+    for(String temp: ast.getParameterTypeNames()){
+        param.add(Environment.getType(temp));
+    }
+    if(ast.getReturnTypeName().isPresent()){
+        scope.defineVariable("return","return",Environment.getType(ast.getReturnTypeName().get()),false,Environment.NIL);
+        scope.defineFunction(ast.getName(),ast.getFunction().getJvmName(),param,Environment.getType(ast.getReturnTypeName().get()),args ->Environment.NIL);
+    }else{
+        scope.defineVariable("return","return",Environment.Type.NIL,false,Environment.NIL);
+        scope.defineFunction(ast.getName(),ast.getFunction().getJvmName(),param, Environment.Type.NIL,args ->Environment.NIL);
+    }
+
+    ast.setFunction(scope.lookupFunction(ast.getName(),ast.getParameters().size()));
+    return null;
+
     }
 
     @Override
     public Void visit(Ast.Statement.Expression ast) {
-        throw new UnsupportedOperationException();  // TODO
+
+      if(ast.getExpression().getClass()==Ast.Expression.Function.class) {
+          visit(ast.getExpression());
+      }else {
+          throw new RuntimeException();
+      }
+      return null;
     }
 
     @Override
     public Void visit(Ast.Statement.Declaration ast) {
-        throw new UnsupportedOperationException();  // TODO
+      if(ast.getValue().isPresent() && ast.getTypeName().isPresent()){
+          visit(ast.getValue().get());
+          requireAssignable(Environment.getType(ast.getTypeName().get()),ast.getVariable().getType());
+          //Environment.PlcObject temp = Environment.create(ast.getValue());
+          ast.setVariable(scope.defineVariable(ast.getName(),ast.getValue().get().getType().getJvmName(),ast.getVariable().getType(),true, Environment.NIL));
+      }else{
+          throw new RuntimeException();
+      }
+      return null;
     }
 
     @Override
     public Void visit(Ast.Statement.Assignment ast) {
-        throw new UnsupportedOperationException();  // TODO
+        if(ast.getReceiver().getClass()==Ast.Expression.Access.class){
+            visit(ast.getReceiver());
+            visit(ast.getValue());
+            requireAssignable(ast.getReceiver().getType(),ast.getValue().getType());
+        }else{
+            throw new RuntimeException();
+        }
+        return null;
     }
 
     @Override
     public Void visit(Ast.Statement.If ast) {
-        throw new UnsupportedOperationException();  // TODO
+       visit(ast.getCondition());
+       requireAssignable(ast.getCondition().getType(),Environment.Type.BOOLEAN);
+       if(!ast.getThenStatements().isEmpty()){
+           try {
+               scope = new Scope(scope);
+               for (Ast.Statement statement : ast.getThenStatements()) {
+                   visit(statement);
+               }
+           }finally {
+               scope = scope.getParent();
+           }
+       }else{
+           throw new RuntimeException();
+       }
+       if(!ast.getElseStatements().isEmpty()) {
+          try {
+              scope = new Scope(scope);
+              for (Ast.Statement statement : ast.getElseStatements()) {
+                  visit(statement);
+              }
+          }finally {
+              scope = scope.getParent();
+          }
+       }else{
+           throw new RuntimeException();
+       }
+       return null;
     }
 
     @Override
     public Void visit(Ast.Statement.Switch ast) {
-        throw new UnsupportedOperationException();  // TODO
+        visit(ast.getCondition());
+        int i=0;
+        for(Ast.Statement.Case cas:ast.getCases()){
+            requireAssignable(ast.getCondition().getType(), cas.getValue().get().getType());
+            if(i==ast.getCases().size()-1 && cas.getValue().isPresent()){
+                throw new RuntimeException();
+            }
+            scope = new Scope(scope);
+            visit(cas);
+            scope = scope.getParent();
+            i++;
+        }
+        return null;
     }
 
     @Override
     public Void visit(Ast.Statement.Case ast) {
-        throw new UnsupportedOperationException();  // TODO
+       // scope = new Scope(scope);
+        for(Ast.Statement statement: ast.getStatements()){
+            visit(statement);
+        }
+        //scope = scope.getParent();
+        return null;
     }
 
     @Override
