@@ -3,6 +3,7 @@ package plc.project;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Optional;
 
 public final class Generator implements Ast.Visitor<Void> {
 
@@ -72,6 +73,13 @@ public final class Generator implements Ast.Visitor<Void> {
                 print(" ");
                 print("=");
                 print(" ");
+                print("{");
+                if(ast.getValue().isPresent()){
+                    Ast.Expression.PlcList temp = (Ast.Expression.PlcList)ast.getValue().get();
+                    visit(temp);
+                }
+                print("}");
+                print(";");
 
             }else{
                 print(ast.getVariable().getType().getJvmName());
@@ -291,7 +299,14 @@ public final class Generator implements Ast.Visitor<Void> {
         }else{
             print(ast.getLeft());
             print(" ");
-            print(ast.getOperator());
+            if (ast.getOperator().equals("OR")) {
+                print("||");
+            }
+            else if (ast.getOperator().equals("AND")) {
+                print("&&");
+            }else{
+                print(ast.getOperator());
+            }
             print(" ");
             print(ast.getRight());
         }
@@ -314,14 +329,13 @@ public final class Generator implements Ast.Visitor<Void> {
         print(ast.getFunction().getJvmName());
         print("(");
         int numArgs = ast.getArguments().size()-1;
-        int i = 0;
         if(ast.getArguments().size() != 0){
             for (Ast.Expression e: ast.getArguments()) {
                 print(e);
-                i++;
-                if (i != numArgs) {
+                if (0 != numArgs || ast.getArguments().size() != 1) {
                     print(", ");
                 }
+                numArgs--;
             }
         }
         print(")");
@@ -330,7 +344,15 @@ public final class Generator implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Expression.PlcList ast) {
-        throw new UnsupportedOperationException(); //TODO
+        int temp = ast.getValues().size()-1;
+        for(Ast.Expression e: ast.getValues()){
+            print(e);
+            if(ast.getValues().size() != 1 && temp!=0){
+                print(", ");
+            }
+            temp--;
+        }
+        return null;
     }
 
 }
