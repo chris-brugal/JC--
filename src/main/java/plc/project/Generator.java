@@ -33,6 +33,20 @@ public final class Generator implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Source ast) {
+        /*
+        public class Main {
+
+            public static void main(String[] args) {
+                System.exit(new Main().main());
+            }
+
+            int main() {
+                System.out.println("Hello, World!");
+                return 0;
+            }
+
+        }
+         */
         print("public class Main {");
         newline(indent);
         indent++;
@@ -63,9 +77,8 @@ public final class Generator implements Ast.Visitor<Void> {
     @Override
     public Void visit(Ast.Global ast) {
         if(ast.getMutable()){
-            //mutable
-            if(ast.getVariable().getJvmName().equals("list")){
-                //TODO: list- check OH
+            //mutable list
+            if(ast.getValue().isPresent() && ast.getValue().get() instanceof Ast.Expression.PlcList){
                 print(ast.getVariable().getType().getJvmName());
                 print("[]");
                 print(" ");
@@ -75,6 +88,9 @@ public final class Generator implements Ast.Visitor<Void> {
                 print(" ");
                 print("{");
                 if(ast.getValue().isPresent()){
+                    //if this doesnt work, we can do it the same way as we did with mutable variables
+                    //LIST nums: Integer = {1, 2, 3};
+                    //TODO debug
                     Ast.Expression.PlcList temp = (Ast.Expression.PlcList)ast.getValue().get();
                     visit(temp);
                 }
@@ -82,6 +98,8 @@ public final class Generator implements Ast.Visitor<Void> {
                 print(";");
 
             }else{
+                //mutable variable
+                //var x = 10;
                 print(ast.getVariable().getType().getJvmName());
                 if(ast.getValue().isPresent()){
                     print(" ");
@@ -92,9 +110,11 @@ public final class Generator implements Ast.Visitor<Void> {
                 }
             }
         }else{
-            //immutable
+            //immutable variable
             print("final ");
             print(ast.getVariable().getType().getJvmName());
+            print(" ");
+            print(ast.getName());
             if(ast.getValue().isPresent()){
                 print(" ");
                 print("=");
@@ -108,6 +128,11 @@ public final class Generator implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Function ast) {
+        /*
+        double area(double radius) {
+            return 3.14 * radius * radius;
+        }
+         */
         print(ast.getFunction().getReturnType().getJvmName());
         print(" ");
         print(ast.getName());
@@ -117,10 +142,10 @@ public final class Generator implements Ast.Visitor<Void> {
         if(ast.getParameters().size() != 0){
             for (String e: ast.getParameters()) {
                 print(e);
-                i++;
                 if (i != numArgs) {
                     print(", ");
                 }
+                i++;
             }
         }
         print(")");
@@ -210,15 +235,6 @@ public final class Generator implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Statement.Switch ast) {
-        /*
-            switch (letter) {
-                case 'y':
-                    System.out.print("yes");
-                    letter = 'n';
-                default:
-                    System.out.println("no");
-            }
-         */
         print("switch ");
         print("(");
         print(ast.getCondition());
@@ -387,7 +403,7 @@ public final class Generator implements Ast.Visitor<Void> {
         int temp = ast.getValues().size()-1;
         for(Ast.Expression e: ast.getValues()){
             print(e);
-            if(ast.getValues().size() != 1 && temp!=0){
+            if(ast.getValues().size() != 1 && ast.getValues().size() !=0 && temp!=0){
                 print(", ");
             }
             temp--;
