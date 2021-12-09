@@ -99,15 +99,16 @@ public final class Generator implements Ast.Visitor<Void> {
 
             }else{
                 //mutable variable
-                //var x = 10;
                 print(ast.getVariable().getType().getJvmName());
+                print(" ");
+                print(ast.getName());
                 if(ast.getValue().isPresent()){
                     print(" ");
                     print("=");
                     print(" ");
-                    print(ast.getValue());
-                    print(";");
+                    print(ast.getValue().get());
                 }
+                print(";");
             }
         }else{
             //immutable variable
@@ -119,9 +120,9 @@ public final class Generator implements Ast.Visitor<Void> {
                 print(" ");
                 print("=");
                 print(" ");
-                print(ast.getValue());
-                print(";");
+                print(ast.getValue().get());
             }
+            print(";");
         }
         return null;
     }
@@ -138,14 +139,14 @@ public final class Generator implements Ast.Visitor<Void> {
         print(ast.getName());
         print("(");
         int numArgs = ast.getParameters().size()-1;
-        int i = 0;
         if(ast.getParameters().size() != 0){
-            for (String e: ast.getParameters()) {
-                print(e);
-                if (i != numArgs) {
+            for(int i = 0; i < ast.getParameters().size(); i++){
+                print(ast.getParameterTypeNames().get(i));
+                print(" ");
+                print(ast.getParameters().get(i));
+                if (i != ast.getParameters().size() - 1) {
                     print(", ");
                 }
-                i++;
             }
         }
         print(")");
