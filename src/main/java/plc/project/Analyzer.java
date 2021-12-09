@@ -51,21 +51,20 @@ public final class Analyzer implements Ast.Visitor<Void> {
         if(ast.getValue().isPresent()){
             visit(ast.getValue().get());
             requireAssignable(Environment.getType(ast.getTypeName()),ast.getValue().get().getType());
-            scope.defineVariable(ast.getName(), ast.getValue().get().getType().getJvmName(),ast.getValue().get().getType(), ast.getMutable(), ast.getVariable().getValue());
-        }else{
-            scope.defineVariable(ast.getName(), ast.getValue().get().getType().getJvmName(),Environment.getType(ast.getTypeName()), ast.getMutable(), Environment.NIL);
         }
+        scope.defineVariable(ast.getName(), ast.getName(),Environment.getType(ast.getTypeName()), ast.getMutable(), Environment.NIL);
         ast.setVariable(scope.lookupVariable(ast.getName()));
-
         return null;
     }
 
     @Override
     public Void visit(Ast.Function ast) {
-        List<Environment.Type> param= new ArrayList<>();
-    for(Ast.Statement statement:ast.getStatements()){
 
-            scope = new Scope(scope);
+  List<Environment.Type> param= new ArrayList<>();
+
+    for(Ast.Statement statement:ast.getStatements()){
+        scope = new Scope(scope);
+
             visit(statement);
 
             scope = scope.getParent();
@@ -75,14 +74,14 @@ public final class Analyzer implements Ast.Visitor<Void> {
         param.add(Environment.getType(temp));
     }
     if(ast.getReturnTypeName().isPresent()){
-        scope.defineVariable("return","return",Environment.getType(ast.getReturnTypeName().get()),false,Environment.NIL);
-        scope.defineFunction(ast.getName(),ast.getFunction().getJvmName(),param,Environment.getType(ast.getReturnTypeName().get()),args ->Environment.NIL);
+        scope.defineVariable("return","return", Environment.getType(ast.getReturnTypeName().get()), false, Environment.NIL);
+        scope.defineFunction(ast.getFunction().getName(), ast.getFunction().getName(),param,ast.getFunction().getReturnType(),args ->Environment.NIL);
     }else{
         scope.defineVariable("return","return",Environment.Type.NIL,false,Environment.NIL);
-        scope.defineFunction(ast.getName(),ast.getFunction().getJvmName(),param, Environment.Type.NIL,args ->Environment.NIL);
+        scope.defineFunction(ast.getFunction().getName(), ast.getFunction().getName(),param, ast.getFunction().getReturnType(),args ->Environment.NIL);
     }
 
-    ast.setFunction(scope.lookupFunction(ast.getName(),ast.getParameters().size()));
+    ast.setFunction(scope.lookupFunction(ast.getFunction().getName(),ast.getParameters().size()));
     return null;
 
     }
@@ -100,13 +99,21 @@ public final class Analyzer implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Statement.Declaration ast) {
-      if(ast.getValue().isPresent() && ast.getTypeName().isPresent()){
+      if( ast.getValue().isPresent() && ast.getTypeName().isPresent() ){
           visit(ast.getValue().get());
-          requireAssignable(Environment.getType(ast.getTypeName().get()),ast.getVariable().getType());
-          //Environment.PlcObject temp = Environment.create(ast.getValue());
-          ast.setVariable(scope.defineVariable(ast.getName(),ast.getValue().get().getType().getJvmName(),ast.getVariable().getType(),true, Environment.NIL));
-      }else{
-          throw new RuntimeException();
+          requireAssignable(ast.getValue().get().getType(),Environment.getType(ast.getTypeName().get()));
+          scope.defineVariable(ast.getName(),ast.getName(), ast.getValue().get().getType(),true, Environment.NIL);
+          ast.setVariable(scope.lookupVariable(ast.getName()));
+      }else if(!ast.getValue().isPresent() ){
+          scope.defineVariable(ast.getName(),ast.getName(), Environment.getType(ast.getTypeName().get()),true, Environment.NIL);
+          ast.setVariable(scope.lookupVariable(ast.getName()));
+      }else if(!ast.getTypeName().isPresent()) {
+          visit(ast.getValue().get());
+          scope.defineVariable(ast.getName(),ast.getName(), ast.getValue().get().getType(),true, Environment.NIL);
+          ast.setVariable(scope.lookupVariable(ast.getName()));
+      }
+      else{
+         throw new RuntimeException();
       }
       return null;
     }
@@ -129,7 +136,7 @@ public final class Analyzer implements Ast.Visitor<Void> {
        requireAssignable(ast.getCondition().getType(),Environment.Type.BOOLEAN);
        if(!ast.getThenStatements().isEmpty()){
            try {
-               scope = new Scope(scope);
+
                for (Ast.Statement statement : ast.getThenStatements()) {
                    visit(statement);
                }
@@ -159,12 +166,13 @@ public final class Analyzer implements Ast.Visitor<Void> {
         visit(ast.getCondition());
         int i=0;
         for(Ast.Statement.Case cas:ast.getCases()){
+            scope = new Scope(scope);
+            visit(cas);
             requireAssignable(ast.getCondition().getType(), cas.getValue().get().getType());
             if(i==ast.getCases().size()-1 && cas.getValue().isPresent()){
                 throw new RuntimeException();
             }
-            scope = new Scope(scope);
-            visit(cas);
+
             scope = scope.getParent();
             i++;
         }
@@ -307,30 +315,18 @@ public final class Analyzer implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Expression.Access ast) {
-        try {
+
             //field
             if (ast.getOffset().isPresent()) {
-                Ast.Expression.Access t = (Ast.Expression.Access) ast.getOffset().get();
-                t.setVariable(scope.lookupVariable(t.getName()));
-                try {
-                    String varName = t.getName();
-                    scope = scope.lookupVariable(varName).getType().getScope();
-                    Environment.Variable var = scope.lookupVariable(ast.getName());
-                    ast.setVariable(var);
-                }
-                finally {
-                    scope = scope.getParent();
-                }
+
+                visit(ast.getOffset().get());
+                requireAssignable(Environment.Type.INTEGER,ast.getOffset().get().getType() );
+
             }
-            //nonfield
-            else {
-                Environment.Variable var = scope.lookupVariable(ast.getName());
-                ast.setVariable(var);
-            }
-        }
-        catch (RuntimeException exception) {
-            throw new RuntimeException(exception);
-        }
+
+            ast.setVariable(scope.lookupVariable(ast.getName()));
+
+
 
         return null;
     }
@@ -350,14 +346,14 @@ public final class Analyzer implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Expression.PlcList ast) {
-        try{
+
+
             for(Ast.Expression e: ast.getValues()){
                 //not 100% sure
+                visit(e);
                 requireAssignable(e.getType(), ast.getType());
             }
-        }catch (RuntimeException exception) {
-            throw new RuntimeException(exception);
-        }
+
         return null;
     }
 
