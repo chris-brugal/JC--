@@ -34,10 +34,6 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             visit(function);
         }
 
-        if(scope.lookupFunction("main",0).invoke(new ArrayList<>()) == null) {
-        throw new RuntimeException();
-        }
-
         return  scope.lookupFunction("main",0).invoke(new ArrayList<>());
     }
 
@@ -53,9 +49,11 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Function ast) {
+        Scope sc = scope;
         scope.defineFunction(ast.getName(), ast.getParameters().size(), arguments ->{
+            Scope scChild = scope;
             try {
-                scope = new Scope(scope);
+                scope = new Scope(sc);
                 for(int i = 0; i < arguments.size(); i++){
                     //not sure about the mutability part (:/)
                     //scope.getParent().lookupVariable(ast.getParameters().get(i)).getMutable()
@@ -67,7 +65,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             }catch (Return returnValue) {
                 return returnValue.value;
             }finally {
-                scope = scope.getParent();
+                scope = scChild;
             }
             return Environment.NIL;
         });
@@ -299,7 +297,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             }else if(l.getValue() instanceof BigDecimal && r.getValue() instanceof BigDecimal){
                 return Environment.create(requireType(BigDecimal.class, l).add(requireType(BigDecimal.class, r)));
             }else if(l.getValue() instanceof String || r.getValue() instanceof String){
-                return Environment.create(requireType(String.class, l).concat(requireType(String.class, r)));
+                return Environment.create(((String)l.getValue()).concat(((String)r.getValue())));
             }
         }
         else if (Objects.equals(op, "-")){
@@ -321,8 +319,8 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         else if (Objects.equals(op, "/")){
             Environment.PlcObject r = visit(ast.getRight());
             if(l.getValue() instanceof BigInteger && r.getValue() instanceof BigInteger && r.toString().equals("0")){
-                //TODO look into this dividing by zero
-                throw new Return(Environment.NIL);
+                //TODO look into this dividing by zero throwing a rubntime excep
+                throw new RuntimeException();
             } else if(l.getValue() instanceof BigInteger && r.getValue() instanceof BigInteger){
                 return Environment.create(requireType(BigInteger.class, l).divide(requireType(BigInteger.class, r)));
             } else if(l.getValue() instanceof BigDecimal && r.getValue() instanceof BigDecimal){
@@ -332,9 +330,9 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         else if (Objects.equals(op, "^")){
             Environment.PlcObject r = visit(ast.getRight());
             if(l.getValue() instanceof BigInteger && r.getValue() instanceof BigInteger){
-                return Environment.create(requireType(BigInteger.class, l).pow(requireType(Integer.class, r)));
-            } else if(l.getValue() instanceof BigDecimal && r.getValue() instanceof BigDecimal){
-                return Environment.create(requireType(BigDecimal.class, l).pow(requireType(Integer.class, r)));
+                return Environment.create(requireType(BigInteger.class, l).pow(((BigInteger) r.getValue()).intValue()));
+            } else if(l.getValue() instanceof BigDecimal && r.getValue() instanceof BigInteger){
+                return Environment.create(requireType(BigDecimal.class, l).pow(((BigInteger) r.getValue()).intValue()));
             }
         }
         //TODO look into the throwing exceptions for - and + more since there is a left and right value
