@@ -61,25 +61,25 @@ public final class Analyzer implements Ast.Visitor<Void> {
     public Void visit(Ast.Function ast) {
 
   List<Environment.Type> param= new ArrayList<>();
-
+        try {
+            scope = new Scope(scope);
+            if(ast.getReturnTypeName().isPresent()){
+                scope.defineVariable("return","return", Environment.getType(ast.getReturnTypeName().get()), true, Environment.NIL);}
+            else{
+                scope.defineVariable("return","return",Environment.Type.NIL,true,Environment.NIL);
+            }
     for(Ast.Statement statement:ast.getStatements()){
-       try {
-           scope = new Scope(scope);
            visit(statement);
-       }finally {
-           scope = scope.getParent();
-       }
-
-
     }
+        }finally {
+            scope = scope.getParent();
+        }
     for(String temp: ast.getParameterTypeNames()){
         param.add(Environment.getType(temp));
     }
     if(ast.getReturnTypeName().isPresent()){
-        scope.defineVariable("return","return", Environment.getType(ast.getReturnTypeName().get()), true, Environment.NIL);
         scope.defineFunction(ast.getName(), ast.getName(),param,Environment.getType(ast.getReturnTypeName().get()),args ->Environment.NIL);
     }else{
-        scope.defineVariable("return","return",Environment.Type.NIL,true,Environment.NIL);
         scope.defineFunction(ast.getName(), ast.getName(),param, Environment.Type.NIL,args ->Environment.NIL);
     }
 
@@ -168,10 +168,11 @@ public final class Analyzer implements Ast.Visitor<Void> {
         for(Ast.Statement.Case cas:ast.getCases()){
                 visit(cas);
                 if(cas.getValue().isPresent()) {
+                    requireAssignable(ast.getCondition().getType(), cas.getValue().get().getType());
                     if (i == ast.getCases().size() - 1){
                         throw new RuntimeException("Default case has a value");
                     }
-                    requireAssignable(ast.getCondition().getType(), cas.getValue().get().getType());
+
                 }
             i++;
         }
@@ -180,14 +181,18 @@ public final class Analyzer implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Statement.Case ast) {
-       try {
-           scope = new Scope(scope);
-           for (Ast.Statement statement : ast.getStatements()) {
-               visit(statement);
-           }
-       }finally {
-           scope = scope.getParent();
-       }
+        if(ast.getValue().isPresent()) {
+            visit(ast.getValue().get());
+        }
+            try {
+                scope = new Scope(scope);
+                for (Ast.Statement statement : ast.getStatements()) {
+                    visit(statement);
+                }
+            } finally {
+                scope = scope.getParent();
+            }
+
         return null;
     }
 
@@ -217,7 +222,7 @@ public final class Analyzer implements Ast.Visitor<Void> {
     public Void visit(Ast.Statement.Return ast) {
         visit(ast.getValue());
         try {
-            requireAssignable(scope.lookupVariable("returnType").getType(), ast.getValue().getType());
+            requireAssignable(scope.lookupVariable("return").getType(), ast.getValue().getType());
         }catch (RuntimeException exception) {
             throw new RuntimeException(exception);
         }
@@ -353,6 +358,7 @@ public final class Analyzer implements Ast.Visitor<Void> {
             for(Ast.Expression e: ast.getValues()){
                 //not 100% sure
                 visit(e);
+
                 requireAssignable(e.getType(), ast.getType());
             }
 
